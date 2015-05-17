@@ -114,7 +114,6 @@ var draw = function() {
   _.each(entities, function(entity) {
     var x = (entity.x - entity.w/2) - cameraX;
     var y = (entity.y + entity.h/2) - cameraY;
-    console.log(entity.x, entity.y, x, y);
     ctx.fillStyle = "rgb(200,0,0)";
     ctx.fillRect(x, y, entity.w, entity.h);
   });
