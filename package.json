@@ -5,11 +5,17 @@
   "browser": "./client.js",
   "browserify": {
     "transform": [
-      ["reactify", {"harmony": true}]
+      [
+        "reactify",
+        {
+          "harmony": true
+        }
+      ]
     ]
   },
   "dependencies": {
     "express": "~4.1.1",
+    "immutable": "^3.7.2",
     "underscore": "*",
     "ws": "0.4.31"
   },
@@ -27,4 +33,3 @@
     "clean": "rm -f ./assets/bundle.js"
   }
 }
-
