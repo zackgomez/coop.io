@@ -7,7 +7,7 @@ var map = null;
 var playerID = -1;
 var entities = [];
 
-var ws = new WebSocket('ws://localhost:'+WS_PORT+'/socket');
+var ws = new WebSocket('ws://'+window.location.hostname+':'+WS_PORT+'/socket');
 ws.onopen = function() {
   console.log('connected');
 };

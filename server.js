@@ -5,7 +5,7 @@ var browserify = require('connect-browserify');
 var WebSocketServer = require('ws').Server;
 var Immutable = require('immutable');
 
-var Game = require('./Game');
+var Game = require('./game');
 
 var app = express();
 
