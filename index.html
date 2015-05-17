@@ -1,0 +1,98 @@
+<html>
+<head>
+  <style type="text/css">
+    canvas {
+      border: 1px solid black;
+      padding: 0px;
+      margin: 0px;
+    }
+    body {
+      margin: 0px;
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas" />
+</canvas>
+<script src="jquery-2.1.4.min.js"></script>
+<script>
+  var canvas = document.getElementById('canvas');
+  var ctx = canvas.getContext('2d');
+
+  var screen_width = 0;
+  var screen_height = 0;
+
+  var on_resize = function(event) {
+    screen_width = $(window).width()
+    screen_height = $(window).height();
+
+    canvas.width = screen_width;
+    canvas.height = screen_height;
+  };
+  $(window).resize(on_resize);
+  on_resize();
+
+  var input_state = {};
+
+  var keycode_to_input = {
+    65: 'left',
+    68: 'right',
+    83: 'backward',
+    87: 'forward',
+  };
+
+  $(window).keydown(function(event) {
+    var input = keycode_to_input[event.keyCode];
+    if (input) {
+      input_state[input] = true;
+    }
+  });
+  $(window).keyup(function(event) {
+    var input = keycode_to_input[event.keyCode];
+    if (input) {
+      input_state[input] = false;
+    }
+  });
+
+  var x = 10;
+  var y = 10;
+  var w = 50;
+  var h = 50;
+
+  var speed = 5;
+
+  var update = function() {
+    var vx = 0, vy = 0;
+    if (input_state.left) {
+      vx += -speed;
+    }
+    if (input_state.right) {
+      vx += speed;
+    }
+    if (input_state.forward) {
+      vy += -speed;
+    }
+    if (input_state.backward) {
+      vy += speed;
+    }
+
+    x += vx;
+    y += vy;
+  };
+
+  var tickrate = 64;
+  setInterval(update, 1000 / tickrate);
+
+  var draw = function() {
+    ctx.fillStyle = "rgb(0,0,0)";
+    ctx.fillRect(0, 0, screen_width, screen_height);
+
+    ctx.fillStyle = "rgb(200,0,0)";
+    ctx.fillRect(x, y, w, h);
+
+    requestAnimationFrame(draw);
+  };
+  requestAnimationFrame(draw);
+</script>
+</body>
+</html>
