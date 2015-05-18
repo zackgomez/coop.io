@@ -96,7 +96,12 @@ var update = function() {
 var tickrate = 64;
 setInterval(update, 1000 / tickrate);
 
+var GRID_DIM = 100;
+
 var draw = function() {
+  var start = Date.now();
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = "rgb(0,0,0)";
   ctx.fillRect(0, 0, screen_width, screen_height);
 
@@ -107,16 +112,39 @@ var draw = function() {
     return entity.playerID === playerID;
   });
   if (owned_entity) {
-    //cameraX = owned_entity.x;
-    //cameraY = owned_entity.y;
+    cameraX = owned_entity.x;
+    cameraY = owned_entity.y;
   }
 
+  if (map) {
+    // draw grid
+    var gridx = (map.width - cameraX) % GRID_DIM;
+    var gridy = (map.height - cameraY) % GRID_DIM;
+    ctx.beginPath();
+    while (gridx < screen_width) {
+      ctx.moveTo(gridx, 0);
+      ctx.lineTo(gridx, screen_height);
+      gridx += GRID_DIM;
+    }
+    while (gridy < screen_height) {
+      ctx.moveTo(0, gridy);
+      ctx.lineTo(screen_width, gridy);
+      gridy += GRID_DIM;
+    }
+    ctx.strokeStyle = 'rgb(100, 100, 100)';
+    ctx.stroke();
+  }
+
+  ctx.translate(screen_width/2, screen_height/2);
+  ctx.translate(-cameraX, -cameraY);
+
   _.each(entities, function(entity) {
-    var x = (entity.x - entity.w/2) - cameraX;
-    var y = (entity.y + entity.h/2) - cameraY;
-    ctx.fillStyle = "rgb(200,0,0)";
+    var x = (entity.x - entity.w/2);
+    var y = (entity.y + entity.h/2);
+    ctx.fillStyle = 'rgb(200,0,0)';
     ctx.fillRect(x, y, entity.w, entity.h);
   });
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
 
   requestAnimationFrame(draw);
 };
