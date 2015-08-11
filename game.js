@@ -13,6 +13,8 @@ var GameEntity = function(id, player) {
   this.w = 20;
   this.h = 20;
 
+  this.angle = 0;
+
   this.player = player;
 };
 GameEntity.prototype.serialize = function() {
@@ -22,6 +24,7 @@ GameEntity.prototype.serialize = function() {
     y: this.y,
     w: this.w,
     h: this.h,
+    angle: this.angle,
     playerID: this.player.id,
   };
 };
@@ -99,6 +102,7 @@ Game.prototype.update = function(dt) {
 
     entity.x += vx * dt;
     entity.y += vy * dt;
+    entity.angle = input_state.mouse_angle || 0;
   }, this);
 };
 

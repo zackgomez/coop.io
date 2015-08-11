@@ -20,6 +20,7 @@ ws.onmessage = function(event) {
         y: entity.y,
         w: entity.w,
         h: entity.h,
+        angle: entity.angle,
         playerID: entity.playerID,
       };
     });
@@ -104,10 +105,16 @@ var onMouseMove = function(event) {
     x: pos.x - screen_width / 2,
     y: screen_height / 2 - pos.y,
   };
-  DEBUG_MOUSE_ANGLE = Math.atan2(center_offset.y, center_offset.x);
+  var current_angle = Math.atan2(center_offset.y, center_offset.x);
+  DEBUG_MOUSE_ANGLE = current_angle;
 
   var worldPos = screen_to_world_pos(pos.x, pos.y);
   DEBUG_MOUSE_WORLD_POSITION = worldPos;
+
+  if (input_state.mouse_angle != current_angle) {
+    input_state.mouse_angle = current_angle;
+    on_input_change();
+  }
 };
 $(canvas).mousemove(onMouseMove);
 
@@ -184,16 +191,34 @@ var draw = function() {
   ctx.translate(-cameraX, -cameraY);
 
   _.each(entities, function(entity) {
-    var x = (entity.x - entity.w/2);
-    var y = (entity.y - entity.h/2);
-    ctx.fillStyle = 'rgb(200,0,0)';
-    ctx.fillRect(x, y, entity.w, entity.h);
+    var x = entity.x;
+    var y = entity.y;
+
+    ctx.save();
+
+    ctx.translate(x, y);
+
+
+    if (typeof entity.angle === 'number') {
+      ctx.rotate(-entity.angle || 0);
+      var aim_line = new Path2D();
+      aim_line.moveTo(0, 0);
+      aim_line.lineTo(100000, 0);
+      ctx.strokeStyle = 'rgb(200, 0, 0)';
+      ctx.stroke(aim_line);
+    }
+
+    ctx.fillStyle = 'rgb(50,200,50)';
+    ctx.fillRect(-entity.w/2, -entity.h/2, entity.w, entity.h);
+
+    ctx.restore();
   });
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 
   ctx.font = '20px sans-serif';
   if (owned_entity) {
+    ctx.fillStyle = 'white';
     ctx.fillText('position: ' + owned_entity.x + ' , ' + owned_entity.y, 10, 20);
   }
   var display_angle = DEBUG_MOUSE_ANGLE > 0 ? DEBUG_MOUSE_ANGLE : DEBUG_MOUSE_ANGLE + 2 * Math.PI;
