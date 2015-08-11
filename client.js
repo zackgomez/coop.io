@@ -89,16 +89,27 @@ $(window).keyup(function(event) {
   }
 });
 
+var DEBUG_MOUSE_POSITION = {x: 0, y: 0};
 var DEBUG_MOUSE_WORLD_POSITION = {x: 0, y: 0};
-$(canvas).mousemove(function(event) {
+var DEBUG_MOUSE_ANGLE = 0;
+var onMouseMove = function(event) {
   var rect = canvas.getBoundingClientRect();
   var pos = {
     x: event.clientX - rect.left,
     y: event.clientY - rect.top
   };
+  DEBUG_MOUSE_POSITION = pos;
+
+  var center_offset = {
+    x: pos.x - screen_width / 2,
+    y: screen_height / 2 - pos.y,
+  };
+  DEBUG_MOUSE_ANGLE = Math.atan2(center_offset.y, center_offset.x);
+
   var worldPos = screen_to_world_pos(pos.x, pos.y);
   DEBUG_MOUSE_WORLD_POSITION = worldPos;
-});
+};
+$(canvas).mousemove(onMouseMove);
 
 var screen_to_world_pos = function(x, y) {
   var cameraPosition = get_camera_pos();
@@ -109,7 +120,6 @@ var screen_to_world_pos = function(x, y) {
 
   return worldPos;
 };
-
 
 var update = function() {
 };
@@ -180,19 +190,15 @@ var draw = function() {
     ctx.fillRect(x, y, entity.w, entity.h);
   });
 
-  ctx.fillStyle = 'rgb(0, 0, 220)';
-  ctx.fillRect(0, 0, 4, 4);
-
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-  ctx.fillStyle = 'rgb(0, 220, 0)';
-  ctx.fillRect(screen_width / 2 - 5, screen_height / 2 - 5, 10, 10);
 
   ctx.font = '20px sans-serif';
   if (owned_entity) {
     ctx.fillText('position: ' + owned_entity.x + ' , ' + owned_entity.y, 10, 20);
   }
-  ctx.fillText('mouse: ' + DEBUG_MOUSE_WORLD_POSITION.x + ', ' + DEBUG_MOUSE_WORLD_POSITION.y, 10, 35);
+  var display_angle = DEBUG_MOUSE_ANGLE > 0 ? DEBUG_MOUSE_ANGLE : DEBUG_MOUSE_ANGLE + 2 * Math.PI;
+  display_angle = display_angle * 180 / Math.PI;
+  ctx.fillText('mouse: ' + DEBUG_MOUSE_WORLD_POSITION.x + ', ' + DEBUG_MOUSE_WORLD_POSITION.y + ' | angle: ' + display_angle, 10, 35);
 
   requestAnimationFrame(draw);
 };
