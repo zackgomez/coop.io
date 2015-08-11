@@ -89,6 +89,27 @@ $(window).keyup(function(event) {
   }
 });
 
+var DEBUG_MOUSE_WORLD_POSITION = {x: 0, y: 0};
+$(canvas).mousemove(function(event) {
+  var rect = canvas.getBoundingClientRect();
+  var pos = {
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top
+  };
+  var worldPos = screen_to_world_pos(pos.x, pos.y);
+  DEBUG_MOUSE_WORLD_POSITION = worldPos;
+});
+
+var screen_to_world_pos = function(x, y) {
+  var cameraPosition = get_camera_pos();
+  var worldPos = {
+    x: x - screen_width / 2 + cameraPosition.x,
+    y: y - screen_height / 2 + cameraPosition.y,
+  };
+
+  return worldPos;
+};
+
 
 var update = function() {
 };
@@ -98,14 +119,7 @@ setInterval(update, 1000 / tickrate);
 
 var GRID_DIM = 100;
 
-var draw = function() {
-  var start = Date.now();
-
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = "rgb(0,0,0)";
-  ctx.fillRect(0, 0, screen_width, screen_height);
-
-  // first set viewport to entity we own
+var get_camera_pos = function() {
   var cameraX = map ? map.width / 2 : 0;
   var cameraY = map ? map.height / 2 : 0;
   var owned_entity = _.find(entities, function(entity) {
@@ -115,6 +129,27 @@ var draw = function() {
     cameraX = owned_entity.x;
     cameraY = owned_entity.y;
   }
+
+  return {
+    x: cameraX,
+    y: cameraY,
+  };
+};
+
+var draw = function() {
+  var start = Date.now();
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = "rgb(0,0,0)";
+  ctx.fillRect(0, 0, screen_width, screen_height);
+
+  // first set viewport to entity we own
+  var owned_entity = _.find(entities, function(entity) {
+    return entity.playerID === playerID;
+  });
+  var cameraPosition = get_camera_pos();
+  var cameraX = cameraPosition.x;
+  var cameraY = cameraPosition.y;
 
   if (map) {
     // draw grid
@@ -140,11 +175,24 @@ var draw = function() {
 
   _.each(entities, function(entity) {
     var x = (entity.x - entity.w/2);
-    var y = (entity.y + entity.h/2);
+    var y = (entity.y - entity.h/2);
     ctx.fillStyle = 'rgb(200,0,0)';
     ctx.fillRect(x, y, entity.w, entity.h);
   });
+
+  ctx.fillStyle = 'rgb(0, 0, 220)';
+  ctx.fillRect(0, 0, 4, 4);
+
   ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+  ctx.fillStyle = 'rgb(0, 220, 0)';
+  ctx.fillRect(screen_width / 2 - 5, screen_height / 2 - 5, 10, 10);
+
+  ctx.font = '20px sans-serif';
+  if (owned_entity) {
+    ctx.fillText('position: ' + owned_entity.x + ' , ' + owned_entity.y, 10, 20);
+  }
+  ctx.fillText('mouse: ' + DEBUG_MOUSE_WORLD_POSITION.x + ', ' + DEBUG_MOUSE_WORLD_POSITION.y, 10, 35);
 
   requestAnimationFrame(draw);
 };
