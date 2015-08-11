@@ -167,29 +167,41 @@ var draw = function() {
   var cameraPosition = get_camera_pos();
   var cameraX = cameraPosition.x;
   var cameraY = cameraPosition.y;
-
-  if (map) {
-    // draw grid
-    var gridx = (map.width - cameraX) % GRID_DIM;
-    var gridy = (map.height - cameraY) % GRID_DIM;
-    ctx.beginPath();
-    while (gridx < screen_width) {
-      ctx.moveTo(gridx, 0);
-      ctx.lineTo(gridx, screen_height);
-      gridx += GRID_DIM;
-    }
-    while (gridy < screen_height) {
-      ctx.moveTo(0, gridy);
-      ctx.lineTo(screen_width, gridy);
-      gridy += GRID_DIM;
-    }
-    ctx.strokeStyle = 'rgb(100, 100, 100)';
-    ctx.stroke();
-  }
+  var cameraBounds = {
+    x: cameraPosition.x - screen_width / 2,
+    y: cameraPosition.y - screen_height / 2,
+    w: screen_width,
+    h: screen_height,
+  };
 
   ctx.translate(screen_width/2, screen_height/2);
   ctx.translate(-cameraX, -cameraY);
 
+  // draw map
+  if (map) {
+    // draw grid
+    var gridx = Math.ceil(cameraBounds.x / GRID_DIM);
+    var gridy = Math.ceil(cameraBounds.y / GRID_DIM);
+    ctx.beginPath();
+    while (gridx < cameraBounds.x + cameraBounds.w && gridx < map.width) {
+      ctx.moveTo(gridx, 0);
+      ctx.lineTo(gridx, map.height);
+      gridx += GRID_DIM;
+    }
+    while (gridy < cameraBounds.y + cameraBounds.h && gridy < map.height) {
+      ctx.moveTo(0, gridy);
+      ctx.lineTo(map.width, gridy);
+      gridy += GRID_DIM;
+    }
+    ctx.strokeStyle = 'rgb(100, 100, 100)';
+    ctx.stroke();
+
+    // draw outline
+    ctx.strokeStyle = 'rgb(20, 20, 255)';
+    ctx.strokeRect(0, 0, map.width, map.height);
+  }
+
+  // draw entities
   _.each(entities, function(entity) {
     var x = entity.x;
     var y = entity.y;

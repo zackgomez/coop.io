@@ -1,5 +1,6 @@
 var _ = require('underscore');
 var Immutable = require('immutable');
+var clamp = require('./clamp');
 
 var GameEntity = function(id, player) {
   this.id = id;
@@ -42,8 +43,8 @@ var Player = function(id) {
 
 var Game = function() {
   this.map = {
-    width: 100,
-    height: 100,
+    width: 2000,
+    height: 1000,
   };
 
   this.playerByID = {};
@@ -103,6 +104,9 @@ Game.prototype.update = function(dt) {
     entity.x += vx * dt;
     entity.y += vy * dt;
     entity.angle = input_state.mouse_angle || 0;
+
+    entity.x = clamp(0 + entity.w / 2, entity.x, this.map.width - entity.w / 2);
+    entity.y = clamp(0 + entity.h / 2, entity.y, this.map.height - entity.h / 2);
   }, this);
 };
 
