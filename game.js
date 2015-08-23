@@ -1,39 +1,89 @@
-var _ = require('underscore');
+var _ = require('lodash');
 var Immutable = require('immutable');
 var clamp = require('./clamp');
 
-var GameEntity = function(id, player) {
+var Box2D = require('box2dweb');
+var b2Vec2 = Box2D.Common.Math.b2Vec2
+  , b2BodyDef = Box2D.Dynamics.b2BodyDef
+  , b2Body = Box2D.Dynamics.b2Body
+  , b2FixtureDef = Box2D.Dynamics.b2FixtureDef
+  , b2Fixture = Box2D.Dynamics.b2Fixture
+  , b2World = Box2D.Dynamics.b2World
+  , b2MassData = Box2D.Collision.Shapes.b2MassData
+  , b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape
+  , b2CircleShape = Box2D.Collision.Shapes.b2CircleShape
+  , b2DebugDraw = Box2D.Dynamics.b2DebugDraw;
+
+var GameEntity = function(id, world, def) {
   this.id = id;
+  this.world_ = world;
+  this.def_ = def || {};
 
-  this.x = 0;
-  this.y = 0;
+  this.player = null;
 
-  this.xvel = 0;
-  this.yvel = 0;
-
-  this.w = 20;
-  this.h = 20;
-
-  this.angle = 0;
-
-  this.player = player;
+  this.createBody_();
 };
+
 GameEntity.prototype.serialize = function() {
+  var position = this.body_.GetPosition();
   return {
     id: this.id,
-    x: this.x,
-    y: this.y,
-    w: this.w,
-    h: this.h,
-    angle: this.angle,
+    x: position.x,
+    y: position.y,
+    r: this.shape_.GetRadius(),
+    angle: this.body_.GetAngle(),
     playerID: this.player.id,
   };
 };
 
-GameEntity.prototype.getInputState = function() {
-  return this.player.inputState;
+GameEntity.prototype.createBody_ = function() {
+  var bodyDef = new b2BodyDef();
+  bodyDef.type = b2Body.b2_dynamicBody;
+  bodyDef.position = new b2Vec2(0, 0);
+
+  var body = this.world_.CreateBody( bodyDef );
+  this.body_ = body;
+
+  var radius = this.def_.radius || 1;
+  var circleShape = new b2CircleShape(radius);
+
+  var fd = new b2FixtureDef();
+  fd.shape = circleShape;
+  body.CreateFixture(fd);
+
+  this.shape_ = circleShape;
 };
 
+GameEntity.prototype.think = function(dt) {
+  if (this.player) {
+    var input_state = this.player.inputState;
+
+    var current_angle = this.body_.GetAngle();
+    var new_angle = input_state.mouse_angle || 0;
+
+    if (new_angle != current_angle) {
+      this.body_.SetAngle(new_angle);
+    }
+
+    var xvel = 0;
+    var yvel = 0;
+    var speed = 12;
+    if (input_state.left) {
+      xvel += -speed;
+    }
+    if (input_state.right) {
+      xvel += speed;
+    }
+    if (input_state.forward) {
+      yvel += -speed;
+    }
+    if (input_state.backward) {
+      yvel += speed;
+    }
+
+    this.body_.SetLinearVelocity(new b2Vec2(xvel, yvel));
+  }
+};
 
 var Player = function(id) {
   this.id = id;
@@ -43,23 +93,62 @@ var Player = function(id) {
 
 var Game = function() {
   this.map = {
-    width: 2000,
-    height: 1000,
+    width: 200,
+    height: 100,
   };
 
   this.playerByID = {};
 
   this.lastEntityID_ = 100;
   this.entityByID = {};
+
+  this._setupPhysics();
+}
+
+Game.prototype._setupPhysics = function() {
+  var world = new b2World( new b2Vec2(0.0, -2.0) );
+  this.world_ = world;
+
+  var map = this.map;
+
+  var groundDef = new b2BodyDef();
+  var groundBody = world.CreateBody(groundDef);
+
+  var fd = new b2FixtureDef();
+
+  var shape = new b2PolygonShape();
+  fd.shape = shape;
+  shape.SetAsEdge(new b2Vec2(-map.width/2, -map.height/2), new b2Vec2(map.width/2, -map.height/2));
+  groundBody.CreateFixture(fd);
+
+  shape = new b2PolygonShape();
+  fd.shape = shape;
+  shape.SetAsEdge(new b2Vec2(map.width/2, -map.height/2), new b2Vec2(map.width/2, map.height/2));
+  groundBody.CreateFixture(fd);
+
+  shape = new b2PolygonShape();
+  fd.shape = shape;
+  shape.SetAsEdge(new b2Vec2(map.width/2, map.height/2), new b2Vec2(-map.width/2, map.height/2));
+  groundBody.CreateFixture(fd);
+
+  shape = new b2PolygonShape();
+  fd.shape = shape;
+  shape.SetAsEdge(new b2Vec2(-map.width/2, map.height/2), new b2Vec2(-map.width/2, -map.height/2));
+  groundBody.CreateFixture(fd);
+}
+
+Game.prototype.spawnEntity = function() {
+  var entity = new GameEntity(this.lastEntityID_++, this.world_);
+  this.entityByID[entity.id] = entity;
+  return entity;
 }
 
 Game.prototype.addPlayer = function(player_id) {
   var player = new Player(player_id);
   this.playerByID[player_id] = player;
 
-  var entity = new GameEntity(this.lastEntityID_++, player);
-  entity.x = this.map.width / 2;
-  entity.y = this.map.height / 2;
+  var entity = this.spawnEntity();
+  entity.player = player;
   player.entity = entity;
   this.entityByID[entity.id] = entity;
 };
@@ -83,31 +172,15 @@ Game.prototype.handleInputState = function(player_id, input_state) {
 };
 
 Game.prototype.update = function(dt) {
-  var speed = 100;
+  var start = Date.now();
   _.each(this.entityByID, function(entity, id) {
-    var input_state = entity.getInputState();
+    entity.think(dt);
+  });
 
-    var vx = 0, vy = 0;
-    if (input_state.left) {
-      vx += -speed;
-    }
-    if (input_state.right) {
-      vx += speed;
-    }
-    if (input_state.forward) {
-      vy += -speed;
-    }
-    if (input_state.backward) {
-      vy += speed;
-    }
+  this.world_.Step(1/60, 3, 2);
 
-    entity.x += vx * dt;
-    entity.y += vy * dt;
-    entity.angle = input_state.mouse_angle || 0;
-
-    entity.x = clamp(0 + entity.w / 2, entity.x, this.map.width - entity.w / 2);
-    entity.y = clamp(0 + entity.h / 2, entity.y, this.map.height - entity.h / 2);
-  }, this);
+  var elapsed = Date.now() - start;
+  console.log('think time', elapsed / 1000);
 };
 
 Game.prototype.getMapInfo = function() {

@@ -6,30 +6,31 @@
   "browserify": {
     "transform": [
       [
-        "reactify",
-        {
-          "harmony": true
-        }
+        "babelify",
+        {}
       ]
     ]
   },
   "dependencies": {
+    "box2dweb": "^2.1.0-b",
     "express": "~4.1.1",
     "immutable": "^3.7.2",
+    "lodash": "^3.10.1",
+    "matterjs": "0.0.3",
     "underscore": "*",
     "ws": "0.4.31"
   },
   "devDependencies": {
-    "reactify": "0.17.x",
+    "babel-core": "^5.6.4",
+    "babelify": "^6.1.2",
     "browserify": "~3.44.2",
     "connect-browserify": "~2.0.1",
-    "uglify-js": "~2.4.13",
-    "supervisor": "~0.6.0"
+    "uglify-js": "~2.4.13"
   },
   "scripts": {
-    "start": "supervisor -i node_modules server.js",
+    "run": "babel-node server.js",
     "build": "NODE_ENV=production browserify ./ | uglifyjs -cm 2>/dev/null > ./assets/bundle.js",
-    "start-prod": "NODE_ENV=production node server.js",
+    "start-prod": "NODE_ENV=production babel-node server.js",
     "clean": "rm -f ./assets/bundle.js"
   }
 }

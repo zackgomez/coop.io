@@ -1,11 +1,11 @@
-var _ = require('underscore');
+var _ = require('lodash');
 var path = require('path');
 var express = require('express');
 var browserify = require('connect-browserify');
 var WebSocketServer = require('ws').Server;
 var Immutable = require('immutable');
 
-var Game = require('./game');
+var Game = require('./Game');
 
 var app = express();
 
@@ -75,6 +75,9 @@ setInterval(function () {
 
   _.each(wss.clients, function(ws) {
     ws.send(encoded_message, function(err) {
+      if (err) {
+        console.log('error sending message', err);
+      }
     });
   });
 }, 1000 / TICK_RATE);

@@ -1,4 +1,4 @@
-var _ = require('underscore');
+var _ = require('lodash');
 var WebSocket = require('ws');
 var Immutable = require('immutable');
 var WS_PORT = 3555;
@@ -18,8 +18,7 @@ ws.onmessage = function(event) {
       return {
         x: entity.x,
         y: entity.y,
-        w: entity.w,
-        h: entity.h,
+        r: entity.r,
         angle: entity.angle,
         playerID: entity.playerID,
       };
@@ -134,7 +133,7 @@ var update = function() {
 var tickrate = 64;
 setInterval(update, 1000 / tickrate);
 
-var GRID_DIM = 100;
+var GRID_DIM = 10;
 
 var get_camera_pos = function() {
   var cameraX = map ? map.width / 2 : 0;
@@ -174,23 +173,25 @@ var draw = function() {
     h: screen_height,
   };
 
+  var SCALE = 10;
   ctx.translate(screen_width/2, screen_height/2);
+  ctx.scale(SCALE, SCALE);
   ctx.translate(-cameraX, -cameraY);
 
   // draw map
   if (map) {
     // draw grid
-    var gridx = Math.ceil(cameraBounds.x / GRID_DIM);
-    var gridy = Math.ceil(cameraBounds.y / GRID_DIM);
+    var gridx = Math.ceil(cameraBounds.x / GRID_DIM) * GRID_DIM;
+    var gridy = Math.ceil(cameraBounds.y / GRID_DIM) * GRID_DIM;
     ctx.beginPath();
-    while (gridx < cameraBounds.x + cameraBounds.w && gridx < map.width) {
-      ctx.moveTo(gridx, 0);
-      ctx.lineTo(gridx, map.height);
+    while (gridx < cameraBounds.x + cameraBounds.w && gridx < map.width/2) {
+      ctx.moveTo(gridx, -map.height/2);
+      ctx.lineTo(gridx, map.height/2);
       gridx += GRID_DIM;
     }
-    while (gridy < cameraBounds.y + cameraBounds.h && gridy < map.height) {
-      ctx.moveTo(0, gridy);
-      ctx.lineTo(map.width, gridy);
+    while (gridy < cameraBounds.y + cameraBounds.h && gridy < map.height/2) {
+      ctx.moveTo(-map.width/2, gridy);
+      ctx.lineTo(map.width/2, gridy);
       gridy += GRID_DIM;
     }
     ctx.strokeStyle = 'rgb(100, 100, 100)';
@@ -198,7 +199,7 @@ var draw = function() {
 
     // draw outline
     ctx.strokeStyle = 'rgb(20, 20, 255)';
-    ctx.strokeRect(0, 0, map.width, map.height);
+    ctx.strokeRect(-map.width/2, -map.height/2, map.width, map.height);
   }
 
   // draw entities
@@ -210,18 +211,20 @@ var draw = function() {
 
     ctx.translate(x, y);
 
-
     if (typeof entity.angle === 'number') {
       ctx.rotate(-entity.angle || 0);
       var aim_line = new Path2D();
       aim_line.moveTo(0, 0);
       aim_line.lineTo(100000, 0);
+      ctx.lineWidth = 0.3;
       ctx.strokeStyle = 'rgb(200, 0, 0)';
       ctx.stroke(aim_line);
     }
 
+    var path = new Path2D();
+    path.arc(0, 0, entity.r, 0, 2 * Math.PI, /*anticlockwise*/ false);
     ctx.fillStyle = 'rgb(50,200,50)';
-    ctx.fillRect(-entity.w/2, -entity.h/2, entity.w, entity.h);
+    ctx.fill(path);
 
     ctx.restore();
   });
