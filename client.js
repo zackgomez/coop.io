@@ -115,7 +115,17 @@ var onMouseMove = function(event) {
     on_input_change();
   }
 };
+var onMouseDown = function(event) {
+  input_state.fire = 1;
+  on_input_change();
+};
+var onMouseUp = function(event) {
+  input_state.fire = 0;
+  on_input_change();
+};
 $(canvas).mousemove(onMouseMove);
+$(canvas).mousedown(onMouseDown);
+$(canvas).mouseup(onMouseUp);
 
 var screen_to_world_pos = function(x, y) {
   var cameraPosition = get_camera_pos();
