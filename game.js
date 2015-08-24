@@ -46,6 +46,13 @@ class GameEntity {
     _.each(this.components_, (component) => component.think(dt));
   }
 
+  onDestroy() {
+    _.each(this.components_, (component) => component.onDestroy());
+    if (this.body_) {
+      this.world_.DestroyBody(this.body_);
+    }
+  }
+
   addComponent(component) {
     this.components_.push(component);
     component.setEntity(this);
@@ -95,6 +102,9 @@ class EntityComponent {
   }
 
   think(dt) {
+  }
+
+  onDestroy() {
   }
 }
 
@@ -166,6 +176,7 @@ var Game = function() {
 
   this.lastEntityID_ = 100;
   this.entityByID = {};
+  this.entityRemovalSet_ = {};
 
   this._setupPhysics();
 }
@@ -206,7 +217,13 @@ Game.prototype.spawnEntity = function() {
   var entity = new GameEntity(this.lastEntityID_++, this.world_);
   this.entityByID[entity.id] = entity;
   return entity;
-}
+};
+
+Game.prototype.destroyEntity = function(entity) {
+  if (!entity) { return; }
+
+  this.entityRemovalSet_[entity.id] = entity.id;
+};
 
 Game.prototype.addPlayer = function(player_id) {
   var player = new Player(player_id);
@@ -219,15 +236,16 @@ Game.prototype.addPlayer = function(player_id) {
 };
 
 Game.prototype.removePlayer = function(player_id) {
-  // TODO
-  /*
   delete this.playerByID[player_id];
-  _.each(this.entityByID, function(entity, id) {
-    if (entity.player.id === player_id) {
-      delete this.entityByID[id];
-    }
+  _.each(this.entityByID, (entity, id) => {
+    _.find(entity.getComponents(), (component) => {
+      if (component instanceof PlayerMovementComponent) {
+        this.destroyEntity(entity);
+        return true;
+      }
+      return false;
+    });
   }, this);
-  */
 };
 
 Game.prototype.handleInputState = function(player_id, input_state) {
@@ -241,13 +259,34 @@ Game.prototype.handleInputState = function(player_id, input_state) {
 
 Game.prototype.update = function(dt) {
   var start = Date.now();
+
+  this.commitEntityRemoval_();
+
   _.each(this.entityByID, function(entity, id) {
     entity.think(dt);
   });
 
   this.world_.Step(1/60, 3, 2);
 
+  console.log('contact count', this.world_.GetContactCount());
+
+  this.commitEntityRemoval_();
+
   var elapsed = Date.now() - start;
+};
+
+Game.prototype.commitEntityRemoval_ = function() {
+  var removal_id_set = this.entityRemovalSet_;
+  this.entityRemovalSet_ = {};
+  _.each(removal_id_set, (id) => {
+    var entity = this.entityByID[id];
+    if (!entity) { return; }
+    console.log('Destroying entity id', entity.id);
+
+    delete this.entityByID[id];
+
+    entity.onDestroy();
+  });
 };
 
 Game.prototype.getMapInfo = function() {
