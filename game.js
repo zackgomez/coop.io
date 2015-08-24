@@ -14,55 +14,120 @@ var b2Vec2 = Box2D.Common.Math.b2Vec2
   , b2CircleShape = Box2D.Collision.Shapes.b2CircleShape
   , b2DebugDraw = Box2D.Dynamics.b2DebugDraw;
 
-var GameEntity = function(id, world, def) {
-  this.id = id;
-  this.world_ = world;
-  this.def_ = def || {};
+class GameEntity {
+  constructor(id, world, def) {
+    this.id = id;
+    this.world_ = world;
+    this.def_ = def || {};
+    this.components_ = [];
 
-  this.player = null;
+    this.createBody_();
+  }
 
-  this.createBody_();
-};
+  serialize() {
+    var position = this.body_.GetPosition();
 
-GameEntity.prototype.serialize = function() {
-  var position = this.body_.GetPosition();
-  return {
-    id: this.id,
-    x: position.x,
-    y: position.y,
-    r: this.shape_.GetRadius(),
-    angle: this.body_.GetAngle(),
-    playerID: this.player.id,
-  };
-};
+    var serialized = {};
+    _.each(this.components_, (component) => {
+      var cur = component.serialize();
+      serialized = Object.assign(serialized, cur);
+    });
+    serialized = Object.assign(serialized, {
+      id: this.id,
+      x: position.x,
+      y: position.y,
+      r: this.shape_.GetRadius(),
+      angle: this.body_.GetAngle(),
+    });
+    return serialized;
+  }
 
-GameEntity.prototype.createBody_ = function() {
-  var bodyDef = new b2BodyDef();
-  bodyDef.type = b2Body.b2_dynamicBody;
-  bodyDef.position = new b2Vec2(0, 0);
+  think(dt) {
+    _.each(this.components_, (component) => component.think(dt));
+  }
 
-  var body = this.world_.CreateBody( bodyDef );
-  this.body_ = body;
+  addComponent(component) {
+    this.components_.push(component);
+    component.setEntity(this);
+  }
 
-  var radius = this.def_.radius || 1;
-  var circleShape = new b2CircleShape(radius);
+  getComponents() {
+    return this.components_;
+  }
 
-  var fd = new b2FixtureDef();
-  fd.shape = circleShape;
-  body.CreateFixture(fd);
+  getBody() {
+    return this.body_;
+  }
 
-  this.shape_ = circleShape;
-};
+  createBody_() {
+    var bodyDef = new b2BodyDef();
+    bodyDef.type = b2Body.b2_dynamicBody;
+    bodyDef.position = new b2Vec2(0, 0);
 
-GameEntity.prototype.think = function(dt) {
-  if (this.player) {
-    var input_state = this.player.inputState;
+    var body = this.world_.CreateBody( bodyDef );
+    this.body_ = body;
 
-    var current_angle = this.body_.GetAngle();
+    var radius = this.def_.radius || 1;
+    var circleShape = new b2CircleShape(radius);
+
+    var fd = new b2FixtureDef();
+    fd.shape = circleShape;
+    body.CreateFixture(fd);
+
+    this.shape_ = circleShape;
+  }
+}
+
+class EntityComponent {
+  constructor(options) {
+    this._entity = options.entity || null;
+  }
+
+  setEntity(entity) {
+    this._entity = entity;
+  }
+  getEntity(entity) {
+    return this._entity;
+  }
+
+  serialize() {
+    return {};
+  }
+
+  think(dt) {
+  }
+}
+
+class PlayerMovementComponent extends EntityComponent {
+  constructor(options) {
+    super(options);
+    this.player = options.player || null;
+  }
+
+  serialize() {
+    if (!this.player) {
+      return {};
+    }
+    var playerID = this.player.id;
+    return {
+      playerID,
+    };
+  }
+
+  think(dt) {
+    var entity = this.getEntity();
+    var body = entity && entity.getBody();
+    var player = this.player;
+    if (!player || !body) {
+      return;
+    }
+    var input_state = player.inputState;
+
+    var current_angle = body.GetAngle();
     var new_angle = input_state.mouse_angle || 0;
 
     if (new_angle != current_angle) {
-      this.body_.SetAngle(new_angle);
+      body.SetAngle(new_angle);
     }
 
     var xvel = 0;
@@ -81,7 +146,7 @@ GameEntity.prototype.think = function(dt) {
       yvel += speed;
     }
 
-    this.body_.SetLinearVelocity(new b2Vec2(xvel, yvel));
+    body.SetLinearVelocity(new b2Vec2(xvel, yvel));
   }
 };
 
@@ -106,7 +171,7 @@ var Game = function() {
 }
 
 Game.prototype._setupPhysics = function() {
-  var world = new b2World( new b2Vec2(0.0, -2.0) );
+  var world = new b2World( new b2Vec2(0.0, 0.0) );
   this.world_ = world;
 
   var map = this.map;
@@ -148,18 +213,21 @@ Game.prototype.addPlayer = function(player_id) {
   this.playerByID[player_id] = player;
 
   var entity = this.spawnEntity();
-  entity.player = player;
-  player.entity = entity;
+  var playerComponent = new PlayerMovementComponent({player});
+  entity.addComponent(playerComponent);
   this.entityByID[entity.id] = entity;
 };
 
 Game.prototype.removePlayer = function(player_id) {
+  // TODO
+  /*
   delete this.playerByID[player_id];
   _.each(this.entityByID, function(entity, id) {
     if (entity.player.id === player_id) {
       delete this.entityByID[id];
     }
   }, this);
+  */
 };
 
 Game.prototype.handleInputState = function(player_id, input_state) {
@@ -180,7 +248,6 @@ Game.prototype.update = function(dt) {
   this.world_.Step(1/60, 3, 2);
 
   var elapsed = Date.now() - start;
-  console.log('think time', elapsed / 1000);
 };
 
 Game.prototype.getMapInfo = function() {
