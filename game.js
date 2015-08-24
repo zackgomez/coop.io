@@ -66,10 +66,15 @@ class GameEntity {
     return this.body_;
   }
 
+  getWorld() {
+    return this.world_;
+  }
+
   createBody_() {
     var bodyDef = new b2BodyDef();
     bodyDef.type = b2Body.b2_dynamicBody;
     bodyDef.position = new b2Vec2(0, 0);
+    bodyDef.userData = this.id;
 
     var body = this.world_.CreateBody( bodyDef );
     this.body_ = body;
@@ -87,6 +92,7 @@ class GameEntity {
 
 class EntityComponent {
   constructor(options) {
+    options = options || {};
     this._entity = options.entity || null;
   }
 
@@ -104,6 +110,10 @@ class EntityComponent {
   think(dt) {
   }
 
+  // other is null if it's a collision with the world
+  onCollision(other) {
+  }
+
   onDestroy() {
   }
 }
@@ -111,6 +121,7 @@ class EntityComponent {
 class PlayerMovementComponent extends EntityComponent {
   constructor(options) {
     super(options);
+    options = options || {};
     this.player = options.player || null;
   }
 
@@ -159,6 +170,26 @@ class PlayerMovementComponent extends EntityComponent {
     body.SetLinearVelocity(new b2Vec2(xvel, yvel));
   }
 };
+
+class EnemyMovementComponent extends EntityComponent {
+  constructor(options) {
+    super(options);
+  }
+  serialize() {
+    return {};
+  }
+
+  think(dt) {
+    var entity = this.getEntity();
+    if (!entity) { return; }
+
+    var body = entity.getBody();
+    body.SetLinearVelocity(new b2Vec2(10, 0));
+  }
+
+  onCollision(other) {
+  }
+}
 
 var Player = function(id) {
   this.id = id;
@@ -232,7 +263,10 @@ Game.prototype.addPlayer = function(player_id) {
   var entity = this.spawnEntity();
   var playerComponent = new PlayerMovementComponent({player});
   entity.addComponent(playerComponent);
-  this.entityByID[entity.id] = entity;
+
+  var enemy = this.spawnEntity();
+  var enemyComponent = new EnemyMovementComponent();
+  enemy.addComponent(enemyComponent);
 };
 
 Game.prototype.removePlayer = function(player_id) {
@@ -268,7 +302,20 @@ Game.prototype.update = function(dt) {
 
   this.world_.Step(1/60, 3, 2);
 
-  console.log('contact count', this.world_.GetContactCount());
+  for (var contact = this.world_.GetContactList(); contact; contact = contact.GetNext()) {
+    if (contact.IsTouching()) {
+      var a = contact.GetFixtureA();
+      var b = contact.GetFixtureB();
+      var bodya = a.GetBody();
+      var bodyb = b.GetBody();
+
+      var ida = bodya.GetUserData();
+      var idb = bodyb.GetUserData();
+      console.log('contact between', ida, idb);
+    }
+  }
+
+  this.world_.ClearForces();
 
   this.commitEntityRemoval_();
 
