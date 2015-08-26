@@ -49,7 +49,7 @@ wss.on('connection', function(ws) {
   });
 
   ws.on('message', function(data, flags) {
-    console.log('got data from socket:', data);
+    //console.log('got data from socket:', data);
     var parsed_data = JSON.parse(data);
     if (parsed_data.type === 'input') {
       game.handleInputState(connection_id, parsed_data.payload);

@@ -1,6 +1,10 @@
 var _ = require('lodash');
 var Immutable = require('immutable');
-var clamp = require('./clamp');
+var invariant = require('invariant');
+
+var GameEntity = require('./GameEntity');
+var EntityComponent = require('./EntityComponent');
+var HealthComponent = require('./HealthComponent');
 
 var Box2D = require('box2dweb');
 var b2Vec2 = Box2D.Common.Math.b2Vec2
@@ -14,115 +18,15 @@ var b2Vec2 = Box2D.Common.Math.b2Vec2
   , b2CircleShape = Box2D.Collision.Shapes.b2CircleShape
   , b2DebugDraw = Box2D.Dynamics.b2DebugDraw;
 
-class GameEntity {
-  constructor(id, world, def) {
-    this.id = id;
-    this.world_ = world;
-    this.def_ = def || {};
-    this.components_ = [];
-
-    this.createBody_();
-  }
-
-  serialize() {
-    var position = this.body_.GetPosition();
-
-    var serialized = {};
-    _.each(this.components_, (component) => {
-      var cur = component.serialize();
-      serialized = Object.assign(serialized, cur);
-    });
-    serialized = Object.assign(serialized, {
-      id: this.id,
-      x: position.x,
-      y: position.y,
-      r: this.shape_.GetRadius(),
-      angle: this.body_.GetAngle(),
-    });
-    return serialized;
-  }
-
-  think(dt) {
-    _.each(this.components_, (component) => component.think(dt));
-  }
-
-  onDestroy() {
-    _.each(this.components_, (component) => component.onDestroy());
-    if (this.body_) {
-      this.world_.DestroyBody(this.body_);
-    }
-  }
-
-  addComponent(component) {
-    this.components_.push(component);
-    component.setEntity(this);
-  }
-
-  getComponents() {
-    return this.components_;
-  }
-
-  getBody() {
-    return this.body_;
-  }
-
-  getWorld() {
-    return this.world_;
-  }
-
-  createBody_() {
-    var bodyDef = new b2BodyDef();
-    bodyDef.type = b2Body.b2_dynamicBody;
-    bodyDef.position = new b2Vec2(0, 0);
-    bodyDef.userData = this.id;
-
-    var body = this.world_.CreateBody( bodyDef );
-    this.body_ = body;
-
-    var radius = this.def_.radius || 1;
-    var circleShape = new b2CircleShape(radius);
-
-    var fd = new b2FixtureDef();
-    fd.shape = circleShape;
-    body.CreateFixture(fd);
-
-    this.shape_ = circleShape;
-  }
-}
-
-class EntityComponent {
-  constructor(options) {
-    options = options || {};
-    this._entity = options.entity || null;
-  }
-
-  setEntity(entity) {
-    this._entity = entity;
-  }
-  getEntity(entity) {
-    return this._entity;
-  }
-
-  serialize() {
-    return {};
-  }
-
-  think(dt) {
-  }
-
-  // other is null if it's a collision with the world
-  onCollision(other) {
-  }
-
-  onDestroy() {
-  }
-}
 
 class PlayerMovementComponent extends EntityComponent {
   constructor(options) {
     super(options);
     options = options || {};
     this.player = options.player || null;
+
+    this.fireInterval = options.fireInterval || 1;
+    this.nextFireTime = 0;
   }
 
   serialize() {
@@ -136,12 +40,15 @@ class PlayerMovementComponent extends EntityComponent {
   }
 
   think(dt) {
+    this.nextFireTime -= dt;
+
     var entity = this.getEntity();
     var body = entity && entity.getBody();
     var player = this.player;
     if (!player || !body) {
       return;
     }
+
     var input_state = player.inputState;
 
     var current_angle = body.GetAngle();
@@ -168,6 +75,38 @@ class PlayerMovementComponent extends EntityComponent {
     }
 
     body.SetLinearVelocity(new b2Vec2(xvel, yvel));
+
+    if (input_state.fire && this.nextFireTime <= 0) {
+      var world = body.GetWorld();
+
+      var position = body.GetPosition();
+      var angle = body.GetAngle();
+      var length = 1000;
+      var end = new b2Vec2(position.x + length * Math.cos(angle), position.y + length * Math.sin(angle));
+
+      var callback = (fixture, point, normal, fraction) => {
+        if (fixture.IsSensor()) { return fraction; }
+
+        var body = fixture.GetBody();
+        var entity = body.GetUserData();
+
+        console.log('hit a body', point, 'pos', position);
+        if (entity) {
+          var shot_result = entity.onShot({
+            from: this.getEntity(),
+            point: point,
+            normal: normal,
+          });
+
+          if (shot_result.ignore) {
+            return fraction;
+          }
+        }
+
+        return 0;
+      };
+      world.RayCast(callback, position, end);
+    }
   }
 };
 
@@ -190,6 +129,7 @@ class EnemyMovementComponent extends EntityComponent {
   onCollision(other) {
   }
 }
+
 
 var Player = function(id) {
   this.id = id;
@@ -244,8 +184,8 @@ Game.prototype._setupPhysics = function() {
   groundBody.CreateFixture(fd);
 }
 
-Game.prototype.spawnEntity = function() {
-  var entity = new GameEntity(this.lastEntityID_++, this.world_);
+Game.prototype.spawnEntity = function(def) {
+  var entity = new GameEntity(this.lastEntityID_++, this, def);
   this.entityByID[entity.id] = entity;
   return entity;
 };
@@ -262,11 +202,13 @@ Game.prototype.addPlayer = function(player_id) {
 
   var entity = this.spawnEntity();
   var playerComponent = new PlayerMovementComponent({player});
+  entity.addComponent(new HealthComponent({team: 1}));
   entity.addComponent(playerComponent);
 
   var enemy = this.spawnEntity();
   var enemyComponent = new EnemyMovementComponent();
   enemy.addComponent(enemyComponent);
+  enemy.addComponent(new HealthComponent({team: 2}));
 };
 
 Game.prototype.removePlayer = function(player_id) {
@@ -309,9 +251,12 @@ Game.prototype.update = function(dt) {
       var bodya = a.GetBody();
       var bodyb = b.GetBody();
 
-      var ida = bodya.GetUserData();
-      var idb = bodyb.GetUserData();
-      console.log('contact between', ida, idb);
+      var entitya = bodya.GetUserData();
+      var entityb = bodyb.GetUserData();
+
+      if (entitya && entityb) {
+        console.log('contact between', entitya && entitya.id, entityb && entityb.id);
+      }
     }
   }
 
@@ -338,6 +283,10 @@ Game.prototype.commitEntityRemoval_ = function() {
 
 Game.prototype.getMapInfo = function() {
   return this.map;
+};
+
+Game.prototype.getWorld = function() {
+  return this.world_;
 };
 
 Game.prototype.getGameState = function() {

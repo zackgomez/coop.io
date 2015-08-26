@@ -15,6 +15,7 @@
     "box2dweb": "^2.1.0-b",
     "express": "~4.1.1",
     "immutable": "^3.7.2",
+    "invariant": "^2.1.0",
     "lodash": "^3.10.1",
     "matterjs": "0.0.3",
     "underscore": "*",
