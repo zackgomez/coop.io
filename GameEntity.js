@@ -17,11 +17,16 @@ class GameEntity {
   constructor(id, game, def) {
     this.id = id;
     this.game_ = game;
-    this.def_ = def || {};
     this.components_ = [];
     this.componentByConstructor_ = {};
 
-    this.createBody_();
+    def = def || {};
+    this.createBody_(def);
+    if (def.components) {
+      def.components.forEach((component) => {
+        this.addComponent(component);
+      });
+    }
   }
 
   serialize() {
@@ -94,7 +99,7 @@ class GameEntity {
     return this.game_;
   }
 
-  createBody_() {
+  createBody_(def) {
     var bodyDef = new b2BodyDef();
     bodyDef.type = b2Body.b2_dynamicBody;
     bodyDef.position = new b2Vec2(0, 0);
@@ -103,7 +108,7 @@ class GameEntity {
     var body = this.getWorld().CreateBody( bodyDef );
     this.body_ = body;
 
-    var radius = this.def_.radius || 1;
+    var radius = def.radius || 1;
     var circleShape = new b2CircleShape(radius);
 
     var fd = new b2FixtureDef();

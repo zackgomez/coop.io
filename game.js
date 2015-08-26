@@ -200,15 +200,17 @@ Game.prototype.addPlayer = function(player_id) {
   var player = new Player(player_id);
   this.playerByID[player_id] = player;
 
-  var entity = this.spawnEntity();
-  var playerComponent = new PlayerMovementComponent({player});
-  entity.addComponent(new HealthComponent({team: 1}));
-  entity.addComponent(playerComponent);
+  var components = [
+    new PlayerMovementComponent({player}),
+    new HealthComponent({team: 1}),
+  ];
+  var entity = this.spawnEntity({components});
 
-  var enemy = this.spawnEntity();
-  var enemyComponent = new EnemyMovementComponent();
-  enemy.addComponent(enemyComponent);
-  enemy.addComponent(new HealthComponent({team: 2}));
+  components = [
+    new EnemyMovementComponent(),
+    new HealthComponent({team: 2}),
+  ];
+  var enemy = this.spawnEntity({components});
 };
 
 Game.prototype.removePlayer = function(player_id) {
