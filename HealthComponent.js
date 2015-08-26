@@ -19,6 +19,7 @@ class HealthComponent extends EntityComponent {
     var other_health = from.getComponent(HealthComponent);
     if (!other_health) { return false; }
 
+    console.log(this.getEntity().id, 'team', this.team, 'shot by', other_health.team);
     // no friendly fire for now
     if (other_health.team === this.team) { return false; }
 

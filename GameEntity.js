@@ -102,7 +102,7 @@ class GameEntity {
   createBody_(def) {
     var bodyDef = new b2BodyDef();
     bodyDef.type = b2Body.b2_dynamicBody;
-    bodyDef.position = new b2Vec2(0, 0);
+    bodyDef.position = def.position || new b2Vec2(0, 0);
     bodyDef.userData = this;
 
     var body = this.getWorld().CreateBody( bodyDef );

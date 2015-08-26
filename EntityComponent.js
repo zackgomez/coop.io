@@ -5,7 +5,9 @@ class EntityComponent {
   }
 
   setEntity(entity) {
+    this.componentWillMount(entity);
     this._entity = entity;
+    this.componentDidMount();
   }
   getEntity() {
     return this._entity;
@@ -29,6 +31,14 @@ class EntityComponent {
   // return true to stop further components from receiving the shot
   onShot(shot_def) {
     return false;
+  }
+
+  // called before the component mounts into the passed entity
+  componentWillMount(entity) {
+  }
+
+  // called after the component becomes part of the entity
+  componentDidMount() {
   }
 
   onDestroy() {

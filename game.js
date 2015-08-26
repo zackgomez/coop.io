@@ -7,6 +7,7 @@ var EntityComponent = require('./EntityComponent');
 var HealthComponent = require('./HealthComponent');
 var PlayerMovementComponent = require('./PlayerMovementComponent');
 var EnemyMovementComponent = require('./EnemyMovementComponent');
+var EnemySpawnerComponent = require('./EnemySpawnerComponent');
 
 var Box2D = require('box2dweb');
 var b2Vec2 = Box2D.Common.Math.b2Vec2
@@ -96,10 +97,12 @@ Game.prototype.addPlayer = function(player_id) {
   var entity = this.spawnEntity({components});
 
   components = [
-    new EnemyMovementComponent(),
-    new HealthComponent({team: 2}),
+    new EnemySpawnerComponent(),
+    //new EnemyMovementComponent(),
+    //new HealthComponent({team: 2}),
   ];
-  var enemy = this.spawnEntity({components});
+  var position = new b2Vec2(0, 10);
+  var enemy = this.spawnEntity({components, position});
 };
 
 Game.prototype.removePlayer = function(player_id) {
@@ -146,7 +149,7 @@ Game.prototype.update = function(dt) {
       var entityb = bodyb.GetUserData();
 
       if (entitya && entityb) {
-        console.log('contact between', entitya && entitya.id, entityb && entityb.id);
+        //console.log('contact between', entitya && entitya.id, entityb && entityb.id);
       }
     }
   }

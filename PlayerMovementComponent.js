@@ -1,7 +1,7 @@
-var EntityComponent = require('./EntityComponent');
-
 var Box2D = require('box2dweb');
 var b2Vec2 = Box2D.Common.Math.b2Vec2;
+
+var EntityComponent = require('./EntityComponent');
 
 class PlayerMovementComponent extends EntityComponent {
   constructor(options) {
@@ -61,12 +61,13 @@ class PlayerMovementComponent extends EntityComponent {
     body.SetLinearVelocity(new b2Vec2(xvel, yvel));
 
     if (input_state.fire && this.nextFireTime <= 0) {
+      //this.nextFireTime = this.fireInterval;
       var world = body.GetWorld();
 
       var position = body.GetPosition();
       var angle = body.GetAngle();
       var length = 1000;
-      var end = new b2Vec2(position.x + length * Math.cos(angle), position.y + length * Math.sin(angle));
+      var end = new b2Vec2(position.x + length * Math.cos(angle), position.y + length * -Math.sin(angle));
 
       var callback = (fixture, point, normal, fraction) => {
         if (fixture.IsSensor()) { return fraction; }
