@@ -42,6 +42,10 @@ class EntityTrackerComponent extends EntityComponent {
         continue;
       }
 
+      if (otherFixture.IsSensor()) {
+        continue;
+      }
+
       var otherEntity = other.GetUserData();
       if (!otherEntity) { continue; }
 

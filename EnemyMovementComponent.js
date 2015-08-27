@@ -5,6 +5,7 @@ var b2Vec2 = Box2D.Common.Math.b2Vec2;
 
 var EntityComponent = require('./EntityComponent');
 var EntityTrackerComponent = require('./EntityTrackerComponent');
+var HealthComponent = require('./HealthComponent');
 
 class EnemyMovementComponent extends EntityComponent {
   constructor(options) {
@@ -20,10 +21,15 @@ class EnemyMovementComponent extends EntityComponent {
     if (!body) { return; }
 
     var tracker = entity.getComponent(EntityTrackerComponent);
+    var health = entity.getComponent(HealthComponent);
     if (tracker) {
       var target = null;
       var bestDist = Infinity;
       _.each(tracker.trackedEntityByID, (entity, id) => {
+        var otherHealth = entity.getComponent(HealthComponent);
+        if (health && otherHealth && health.team === otherHealth.team) {
+          return;
+        }
         var body = entity.getBody();
         var delta = b2Vec2.Make(body.GetPosition().x, body.GetPosition.y);
         delta.Subtract(body.GetPosition());
@@ -34,7 +40,8 @@ class EnemyMovementComponent extends EntityComponent {
         }
       });
       if (target) {
-        var direction = target.getBody().GetPosition();
+        var targetPosition = target.getBody().GetPosition();
+        var direction = new b2Vec2(targetPosition.x, targetPosition.y);
         direction.Subtract(body.GetPosition());
         direction.Normalize();
         var speed = this.props.speed || 5;
