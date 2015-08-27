@@ -132,11 +132,11 @@ Game.prototype.update = function(dt) {
 
   this.commitEntityRemoval_();
 
-  _.each(this.entityByID, function(entity, id) {
-    entity.think(dt);
-  });
+  _.each(this.entityByID, (entity, id) => entity.think(dt));
 
   this.world_.Step(1/60, 3, 2);
+
+  _.each(this.entityByID, (entity, id) => entity.didStepPhysics());
 
   for (var contact = this.world_.GetContactList(); contact; contact = contact.GetNext()) {
     if (contact.IsTouching()) {

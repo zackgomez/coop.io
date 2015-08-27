@@ -72,7 +72,6 @@ class PlayerMovementComponent extends EntityComponent {
       console.log('shooting', position, end);
       var callback = (fixture, point, normal, fraction) => {
         if (fixture.IsSensor()) {
-          console.log('skipping fixture');
           return fraction;
         }
 

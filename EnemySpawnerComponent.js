@@ -2,6 +2,7 @@ var Box2D = require('box2dweb');
 var b2Vec2 = Box2D.Common.Math.b2Vec2;
 
 var EntityComponent = require('./EntityComponent');
+var EntityTrackerComponent = require('./EntityTrackerComponent');
 var EnemyMovementComponent = require('./EnemyMovementComponent');
 var HealthComponent = require('./HealthComponent');
 var PhysicsBodyComponent = require('./PhysicsBodyComponent');
@@ -27,9 +28,10 @@ class EnemySpawnerComponent extends EntityComponent {
 
     var game = this.getGame();
     var components = [
-      new PhysicsBodyComponent(),
-      new EnemyMovementComponent(),
+      new PhysicsBodyComponent({position: new b2Vec2(5, 5)}),
       new HealthComponent({team: 2}),
+      new EnemyMovementComponent({speed: 9}),
+      new EntityTrackerComponent({radius: 20}),
     ];
     var enemy = game.spawnEntity({components});
   }

@@ -34,11 +34,13 @@ class GameEntity {
     _.each(this.components_, (component) => component.think(dt));
   }
 
+  didStepPhysics() {
+    _.each(this.components_, (component) => component.didStepPhysics());
+  }
+
   onShot(shot_definition) {
     _.each(this.components_, (component) => {
-      if (component.onShot(shot_definition) === true) {
-        return false;
-      }
+      component.onShot(shot_definition);
     });
     return {
       ignore: false,

@@ -1,6 +1,6 @@
 class EntityComponent {
   constructor(props) {
-    this.props = props;
+    this.props = props || {};
   }
 
   setEntity(entity) {
@@ -23,13 +23,14 @@ class EntityComponent {
   think(dt) {
   }
 
+  didStepPhysics() {
+  }
+
   // other is null if it's a collision with the world
   onCollision(other) {
   }
 
-  // return true to stop further components from receiving the shot
   onShot(shot_def) {
-    return false;
   }
 
   // called before the component mounts into the passed entity

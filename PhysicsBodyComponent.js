@@ -16,7 +16,6 @@ class PhysicsBodyComponent extends EntityComponent {
   constructor(options) {
     super(options);
 
-    this.options_ = null;
     this.body_ = null;
   }
 
@@ -30,18 +29,17 @@ class PhysicsBodyComponent extends EntityComponent {
   }
 
   componentDidMount() {
-    var def = this.options_ || {};
     var entity = this.getEntity();
 
     var bodyDef = new b2BodyDef();
     bodyDef.type = b2Body.b2_dynamicBody;
-    bodyDef.position = def.position || new b2Vec2(0, 0);
+    bodyDef.position = this.props.position || new b2Vec2(0, 0);
     bodyDef.userData = entity;
 
     var body = entity.getWorld().CreateBody( bodyDef );
     this.body_ = body;
 
-    var radius = def.radius || 1;
+    var radius = this.props.radius || 1;
     var circleShape = new b2CircleShape(radius);
 
     var fd = new b2FixtureDef();
@@ -61,13 +59,7 @@ class PhysicsBodyComponent extends EntityComponent {
     };
   }
 
-  think(dt) {
-    var entity = this.getEntity();
-    if (!entity) { return; }
-
-    var body = entity.getBody();
-    if (!body) { return; }
-    body.SetLinearVelocity(new b2Vec2(10, 0));
+  didStepPhysics() {
   }
 
   onDestroy() {
