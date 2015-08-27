@@ -66,7 +66,7 @@ class PlayerMovementComponent extends EntityComponent {
 
       var position = body.GetPosition();
       var angle = body.GetAngle();
-      var length = 1000;
+      var length = 50;
       var end = new b2Vec2(position.x + length * Math.cos(angle), position.y + length * -Math.sin(angle));
 
       console.log('shooting', position, end);
