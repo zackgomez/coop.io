@@ -1,7 +1,6 @@
 class EntityComponent {
-  constructor(options) {
-    options = options || {};
-    this._entity = options.entity || null;
+  constructor(props) {
+    this.props = props;
   }
 
   setEntity(entity) {

@@ -9,7 +9,7 @@ class PlayerMovementComponent extends EntityComponent {
     options = options || {};
     this.player = options.player || null;
 
-    this.fireInterval = options.fireInterval || 1;
+    this.fireInterval = options.fireInterval || 0.25;
     this.nextFireTime = 0;
   }
 
@@ -61,7 +61,7 @@ class PlayerMovementComponent extends EntityComponent {
     body.SetLinearVelocity(new b2Vec2(xvel, yvel));
 
     if (input_state.fire && this.nextFireTime <= 0) {
-      //this.nextFireTime = this.fireInterval;
+      this.nextFireTime = this.fireInterval;
       var world = body.GetWorld();
 
       var position = body.GetPosition();
@@ -69,13 +69,16 @@ class PlayerMovementComponent extends EntityComponent {
       var length = 1000;
       var end = new b2Vec2(position.x + length * Math.cos(angle), position.y + length * -Math.sin(angle));
 
+      console.log('shooting', position, end);
       var callback = (fixture, point, normal, fraction) => {
-        if (fixture.IsSensor()) { return fraction; }
+        if (fixture.IsSensor()) {
+          console.log('skipping fixture');
+          return fraction;
+        }
 
         var body = fixture.GetBody();
         var entity = body.GetUserData();
 
-        console.log('hit a body', point, 'pos', position);
         if (entity) {
           var shot_result = entity.onShot({
             from: this.getEntity(),

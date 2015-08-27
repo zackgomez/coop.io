@@ -4,6 +4,7 @@ var b2Vec2 = Box2D.Common.Math.b2Vec2;
 var EntityComponent = require('./EntityComponent');
 var EnemyMovementComponent = require('./EnemyMovementComponent');
 var HealthComponent = require('./HealthComponent');
+var PhysicsBodyComponent = require('./PhysicsBodyComponent');
 
 class EnemySpawnerComponent extends EntityComponent {
   constructor(options) {
@@ -26,6 +27,7 @@ class EnemySpawnerComponent extends EntityComponent {
 
     var game = this.getGame();
     var components = [
+      new PhysicsBodyComponent(),
       new EnemyMovementComponent(),
       new HealthComponent({team: 2}),
     ];

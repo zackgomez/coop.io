@@ -5,6 +5,7 @@ var invariant = require('invariant');
 var GameEntity = require('./GameEntity');
 var EntityComponent = require('./EntityComponent');
 var HealthComponent = require('./HealthComponent');
+var PhysicsBodyComponent = require('./PhysicsBodyComponent');
 var PlayerMovementComponent = require('./PlayerMovementComponent');
 var EnemyMovementComponent = require('./EnemyMovementComponent');
 var EnemySpawnerComponent = require('./EnemySpawnerComponent');
@@ -91,6 +92,7 @@ Game.prototype.addPlayer = function(player_id) {
   this.playerByID[player_id] = player;
 
   var components = [
+    new PhysicsBodyComponent(),
     new PlayerMovementComponent({player}),
     new HealthComponent({team: 1}),
   ];
@@ -98,8 +100,6 @@ Game.prototype.addPlayer = function(player_id) {
 
   components = [
     new EnemySpawnerComponent(),
-    //new EnemyMovementComponent(),
-    //new HealthComponent({team: 2}),
   ];
   var position = new b2Vec2(0, 10);
   var enemy = this.spawnEntity({components, position});
@@ -169,9 +169,9 @@ Game.prototype.commitEntityRemoval_ = function() {
     if (!entity) { return; }
     console.log('Destroying entity id', entity.id);
 
-    delete this.entityByID[id];
-
     entity.onDestroy();
+
+    delete this.entityByID[id];
   });
 };
 
