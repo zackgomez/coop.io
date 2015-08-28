@@ -35,10 +35,11 @@ var Game = function() {
   };
 
   this.playerByID = {};
+  this.entityByID = {};
 
   this.lastEntityID_ = 100;
-  this.entityByID = {};
   this.entityRemovalSet_ = {};
+  this.events_ = [];
 
   this._setupPhysics();
 }
@@ -118,6 +119,10 @@ Game.prototype.removePlayer = function(player_id) {
   }, this);
 };
 
+Game.prototype.addEvent = function(event) {
+  this.events_.push(event);
+};
+
 Game.prototype.handleInputState = function(player_id, input_state) {
   var player = this.playerByID[player_id];
   if (!player) {
@@ -183,13 +188,15 @@ Game.prototype.getWorld = function() {
   return this.world_;
 };
 
-Game.prototype.getGameState = function() {
+Game.prototype.getNetworkData = function() {
   var state = {
     entityByID: {},
   };
   _.each(this.entityByID, function(entity, id) {
     state.entityByID[id] = entity.serialize();
   });
+  state.events = _.clone(this.events_);
+  this.events_ = [];
 
   return state;
 };

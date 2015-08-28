@@ -6,6 +6,8 @@ var WS_PORT = 3555;
 var map = null;
 var playerID = -1;
 var entities = [];
+var networkEvents = [];
+var effects = [];
 
 var ws = new WebSocket('ws://'+window.location.hostname+':'+WS_PORT+'/socket');
 ws.onopen = function() {
@@ -24,6 +26,7 @@ ws.onmessage = function(event) {
         team: entity.team,
       };
     });
+    networkEvents = networkEvents.concat(message.payload.events);
   } else if (message.type === 'player_info') {
     playerID = message.payload.playerID;
     console.log('server assigned playerID', playerID);
@@ -163,8 +166,30 @@ var get_camera_pos = function() {
   };
 };
 
-var draw = function() {
+var draw = function(dt) {
   var start = Date.now();
+
+  _.each(networkEvents, (event) => {
+    switch(event.type) {
+      case 'shot':
+        var duration = 0.125;
+        var effect = (dt) => {
+          var path = new Path2D();
+          path.moveTo(event.start.x, event.start.y);
+          path.lineTo(event.end.x, event.end.y);
+          ctx.strokeStyle = 'rgb(20, 200, 200)';
+          ctx.stroke(path);
+
+          duration -= dt;
+          return duration > 0;
+        };
+        effects.push(effect);
+
+        break;
+      default:
+    }
+  });
+  networkEvents = [];
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = "rgb(0,0,0)";
@@ -222,7 +247,6 @@ var draw = function() {
 
     ctx.translate(x, y);
 
-
     if (entity.playerID && entity.angle) {
       ctx.rotate(-entity.angle || 0);
       var aim_line = new Path2D();
@@ -250,6 +274,10 @@ var draw = function() {
     ctx.restore();
   });
 
+  effects = _.filter(effects, (effect) => {
+    return effect(dt);
+  });
+
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 
   ctx.font = '20px sans-serif';
@@ -261,7 +289,12 @@ var draw = function() {
   display_angle = display_angle * 180 / Math.PI;
   ctx.fillText('mouse: ' + DEBUG_MOUSE_WORLD_POSITION.x + ', ' + DEBUG_MOUSE_WORLD_POSITION.y + ' | angle: ' + display_angle, 10, 35);
 
-  requestAnimationFrame(draw);
+  requestAnimationFrame(() => {
+    var end = Date.now();
+    let newdt = (end - start) / 1000;
+    draw(newdt);
+  });
+
 };
 requestAnimationFrame(draw);
 

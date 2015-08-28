@@ -66,7 +66,7 @@ setInterval(function () {
   lastUpdateTime = now;
   game.update(dt);
 
-  var state = game.getGameState();
+  var state = game.getNetworkData();
   var message = {
     type: 'state',
     payload: state,
