@@ -21,6 +21,7 @@ ws.onmessage = function(event) {
         r: entity.r,
         angle: entity.angle,
         playerID: entity.playerID,
+        team: entity.team,
       };
     });
   } else if (message.type === 'player_info') {
@@ -221,19 +222,29 @@ var draw = function() {
 
     ctx.translate(x, y);
 
-    if (typeof entity.angle === 'number') {
+
+    if (entity.playerID && entity.angle) {
       ctx.rotate(-entity.angle || 0);
       var aim_line = new Path2D();
       aim_line.moveTo(0, 0);
       aim_line.lineTo(100000, 0);
-      ctx.lineWidth = 0.3;
-      ctx.strokeStyle = 'rgb(200, 0, 0)';
+      ctx.lineWidth = 0.25;
+      ctx.strokeStyle = 'rgba(255, 20, 20, 128)';
       ctx.stroke(aim_line);
     }
 
+    const defaultColor = 'rgb(200, 200, 200)';
+    const selfColor = 'rgb(60, 120, 200)';
+    const colorByTeam = {
+      1: 'rgb(50, 200, 50)',
+      2: 'rgb(200, 0, 0)',
+    };
+    var color = entity.playerID === playerID
+     ? selfColor
+     : colorByTeam[entity.team] || defaultColor;
     var path = new Path2D();
     path.arc(0, 0, entity.r, 0, 2 * Math.PI, /*anticlockwise*/ false);
-    ctx.fillStyle = 'rgb(50,200,50)';
+    ctx.fillStyle = color;
     ctx.fill(path);
 
     ctx.restore();

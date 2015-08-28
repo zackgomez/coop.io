@@ -8,7 +8,9 @@ class HealthComponent extends EntityComponent {
     this.team = options.team || null;
   }
   serialize() {
-    return {};
+    return {
+      team: this.team,
+    };
   }
 
   think(dt) {
