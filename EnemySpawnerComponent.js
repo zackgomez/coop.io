@@ -8,12 +8,11 @@ var HealthComponent = require('./HealthComponent');
 var PhysicsBodyComponent = require('./PhysicsBodyComponent');
 
 class EnemySpawnerComponent extends EntityComponent {
-  constructor(options) {
-    super(options);
+  constructor(props) {
+    super(props);
 
-    options = options || {};
-    this.respawnInterval = options.respawnInterval || 5;
-    this.respawnCooldown = options.respawnCooldown || 0;
+    this.respawnInterval = this.props.respawnInterval || 5;
+    this.respawnCooldown = this.props.respawnCooldown || 0;
   }
 
   think(dt) {
@@ -30,7 +29,7 @@ class EnemySpawnerComponent extends EntityComponent {
     var components = [
       new PhysicsBodyComponent({position: new b2Vec2(5, 5)}),
       new HealthComponent({team: 2, maxHP: 2}),
-      new EnemyMovementComponent({speed: 9}),
+      new EnemyMovementComponent({speed: 11}),
       new EntityTrackerComponent({radius: 20}),
     ];
     var enemy = game.spawnEntity({components});

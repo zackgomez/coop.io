@@ -94,7 +94,7 @@ Game.prototype.addPlayer = function(player_id) {
 
   var components = [
     new PhysicsBodyComponent(),
-    new PlayerMovementComponent({player}),
+    new PlayerMovementComponent({player, speed: 10}),
     new HealthComponent({team: 1}),
   ];
   var entity = this.spawnEntity({components});

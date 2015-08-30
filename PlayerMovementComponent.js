@@ -4,12 +4,12 @@ var b2Vec2 = Box2D.Common.Math.b2Vec2;
 var EntityComponent = require('./EntityComponent');
 
 class PlayerMovementComponent extends EntityComponent {
-  constructor(options) {
-    super(options);
-    options = options || {};
-    this.player = options.player || null;
+  constructor(props) {
+    super(props);
+    this.player = this.props.player || null;
 
-    this.fireInterval = options.fireInterval || 0.25;
+    this.speed = this.props.speed || 1;
+    this.fireInterval = this.props.fireInterval || 0.25;
     this.nextFireTime = 0;
   }
 
@@ -44,21 +44,24 @@ class PlayerMovementComponent extends EntityComponent {
 
     var xvel = 0;
     var yvel = 0;
-    var speed = 12;
     if (input_state.left) {
-      xvel += -speed;
+      xvel += -1;
     }
     if (input_state.right) {
-      xvel += speed;
+      xvel += 1;
     }
     if (input_state.forward) {
-      yvel += -speed;
+      yvel += -1;
     }
     if (input_state.backward) {
-      yvel += speed;
+      yvel += 1;
     }
 
-    body.SetLinearVelocity(new b2Vec2(xvel, yvel));
+    var vel = new b2Vec2(xvel, yvel);
+    vel.Normalize();
+    vel.Multiply(this.speed);
+
+    body.SetLinearVelocity(vel);
 
     if (input_state.fire && this.nextFireTime <= 0) {
       this.nextFireTime = this.fireInterval;
