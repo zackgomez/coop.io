@@ -4,8 +4,9 @@ class HealthComponent extends EntityComponent {
   constructor(options) {
     super(options);
 
-    options = options || {};
-    this.team = options.team || null;
+    this.team = this.props.team || null;
+    this.maxHP = this.props.maxHP || 1;
+    this.hp = this.maxHP;
   }
   serialize() {
     return {
@@ -25,10 +26,11 @@ class HealthComponent extends EntityComponent {
     // no friendly fire for now
     if (other_health.team === this.team) { return false; }
 
-    var game = this.getGame();
-    game.destroyEntity(this.getEntity());
-
-    return false;
+    this.hp -= 1;
+    if (this.hp <= 0) {
+      var game = this.getGame();
+      game.destroyEntity(this.getEntity());
+    }
   }
 }
 

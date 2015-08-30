@@ -29,7 +29,7 @@ class EnemySpawnerComponent extends EntityComponent {
     var game = this.getGame();
     var components = [
       new PhysicsBodyComponent({position: new b2Vec2(5, 5)}),
-      new HealthComponent({team: 2}),
+      new HealthComponent({team: 2, maxHP: 2}),
       new EnemyMovementComponent({speed: 9}),
       new EntityTrackerComponent({radius: 20}),
     ];
