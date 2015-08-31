@@ -104,7 +104,7 @@ Game.prototype.addPlayer = function(player_id) {
     _.random(-this.map.height / 2, this.map.height / 2)
   );
   components = [
-    new PhysicsBodyComponent({position}),
+    new PhysicsBodyComponent({position, radius: 2}),
     new EnemySpawnerComponent({
       spawnPositionFunc: (entity) => {
         return entity.getBody().GetPosition();
