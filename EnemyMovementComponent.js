@@ -22,7 +22,7 @@ class EnemyMovementComponent extends EntityComponent {
 
     var tracker = entity.getComponent(EntityTrackerComponent);
     var health = entity.getComponent(HealthComponent);
-    if (!tracker) {
+    if (!tracker || !health) {
       body.SetLinearVelocity(new b2Vec2(0, 0));
     }
 
@@ -30,9 +30,9 @@ class EnemyMovementComponent extends EntityComponent {
     var bestDist = Infinity;
     _.each(tracker.trackedEntityByID, (entity, id) => {
       var otherHealth = entity.getComponent(HealthComponent);
-      if (health && otherHealth && health.team === otherHealth.team) {
-        return;
-      }
+      if (!otherHealth) { return; }
+      if (health.team === otherHealth.team) { return; }
+
       var body = entity.getBody();
       var delta = b2Vec2.Make(body.GetPosition().x, body.GetPosition.y);
       delta.Subtract(body.GetPosition());

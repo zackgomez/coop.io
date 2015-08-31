@@ -107,7 +107,14 @@ Game.prototype.addPlayer = function(player_id) {
     new PhysicsBodyComponent({position, radius: 2}),
     new EnemySpawnerComponent({
       spawnPositionFunc: (entity) => {
-        return entity.getBody().GetPosition();
+        var position = entity.getBody().GetPosition();
+
+        var direction = position.GetNegative();
+        direction.Normalize();
+        direction.Multiply(2);
+
+        position.Add(direction);
+        return position;
       },
     }),
     new HealthComponent({maxHP: 10, team: 2}),

@@ -10,8 +10,8 @@ var b2Vec2 = Box2D.Common.Math.b2Vec2
 var EntityComponent = require('./EntityComponent');
 
 class EntityTrackerComponent extends EntityComponent {
-  constructor(options) {
-    super(options);
+  constructor(props) {
+    super(props);
 
     this.fixture_ = null;
     this.trackedEntityByID = {};
