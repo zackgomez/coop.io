@@ -99,8 +99,18 @@ Game.prototype.addPlayer = function(player_id) {
   ];
   var entity = this.spawnEntity({components});
 
+  var position = new b2Vec2(
+    _.random(-this.map.width / 2, this.map.width / 2),
+    _.random(-this.map.height / 2, this.map.height / 2)
+  );
   components = [
-    new EnemySpawnerComponent(),
+    new PhysicsBodyComponent({position}),
+    new EnemySpawnerComponent({
+      spawnPositionFunc: (entity) => {
+        return entity.getBody().GetPosition();
+      },
+    }),
+    new HealthComponent({maxHP: 10, team: 2}),
   ];
   var position = new b2Vec2(0, 10);
   var enemy = this.spawnEntity({components, position});

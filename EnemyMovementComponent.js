@@ -8,8 +8,8 @@ var EntityTrackerComponent = require('./EntityTrackerComponent');
 var HealthComponent = require('./HealthComponent');
 
 class EnemyMovementComponent extends EntityComponent {
-  constructor(options) {
-    super(options);
+  constructor(props) {
+    super(props);
   }
   serialize() {
     return {};
@@ -22,36 +22,37 @@ class EnemyMovementComponent extends EntityComponent {
 
     var tracker = entity.getComponent(EntityTrackerComponent);
     var health = entity.getComponent(HealthComponent);
-    if (tracker) {
-      var target = null;
-      var bestDist = Infinity;
-      _.each(tracker.trackedEntityByID, (entity, id) => {
-        var otherHealth = entity.getComponent(HealthComponent);
-        if (health && otherHealth && health.team === otherHealth.team) {
-          return;
-        }
-        var body = entity.getBody();
-        var delta = b2Vec2.Make(body.GetPosition().x, body.GetPosition.y);
-        delta.Subtract(body.GetPosition());
-        var dist = delta.Length();
-        if (!target || dist < bestDist) {
-          target = entity;
-          bestDist = dist;
-        }
-      });
-      if (target) {
-        var targetPosition = target.getBody().GetPosition();
-        var direction = new b2Vec2(targetPosition.x, targetPosition.y);
-        direction.Subtract(body.GetPosition());
-        direction.Normalize();
-        var speed = this.props.speed || 5;
-        var velocity = new b2Vec2(direction.x * speed, direction.y * speed);
-        body.SetLinearVelocity(velocity);
-      } else {
-        body.SetLinearVelocity(new b2Vec2(0, 0));
+    if (!tracker) {
+      body.SetLinearVelocity(new b2Vec2(0, 0));
+    }
+
+    var target = null;
+    var bestDist = Infinity;
+    _.each(tracker.trackedEntityByID, (entity, id) => {
+      var otherHealth = entity.getComponent(HealthComponent);
+      if (health && otherHealth && health.team === otherHealth.team) {
+        return;
       }
+      var body = entity.getBody();
+      var delta = b2Vec2.Make(body.GetPosition().x, body.GetPosition.y);
+      delta.Subtract(body.GetPosition());
+      var dist = delta.Length();
+      if (!target || dist < bestDist) {
+        target = entity;
+        bestDist = dist;
+      }
+    });
+
+    if (target) {
+      var targetPosition = target.getBody().GetPosition();
+      var direction = new b2Vec2(targetPosition.x, targetPosition.y);
+      direction.Subtract(body.GetPosition());
+      direction.Normalize();
+      var speed = this.props.speed || 5;
+      var velocity = new b2Vec2(direction.x * speed, direction.y * speed);
+      body.SetLinearVelocity(velocity);
     } else {
-      body.SetLinearVelocity(new b2Vec2(10, 0));
+      body.SetLinearVelocity(new b2Vec2(0, 0));
     }
   }
 }
