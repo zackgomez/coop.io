@@ -10,6 +10,7 @@ var HealthComponent = require('./HealthComponent');
 var PlayerMovementComponent = require('./PlayerMovementComponent');
 var PhysicsBodyComponent = require('./PhysicsBodyComponent');
 var EnemySpawnerComponent = require('./EnemySpawnerComponent');
+var DestructionListenerComponent = require('./DestructionListenerComponent');
 
 class GameV0Component extends EntityComponent {
   constructor(props) {
@@ -49,6 +50,11 @@ class GameV0Component extends EntityComponent {
       new PhysicsBodyComponent(),
       new PlayerMovementComponent({player, speed: 10}),
       new HealthComponent({team: 1}),
+      new DestructionListenerComponent({
+        callback: () => {
+          console.log('player entity for player', player.id, 'destroyed');
+        },
+      }),
     ];
     var entity = game.spawnEntity({components});
     this._ownedEntityIDsByPlayerID[player.id].push(

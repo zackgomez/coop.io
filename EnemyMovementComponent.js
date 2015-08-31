@@ -10,6 +10,8 @@ var HealthComponent = require('./HealthComponent');
 class EnemyMovementComponent extends EntityComponent {
   constructor(props) {
     super(props);
+
+    this.attackRange = this.props.attackRange || 3;
   }
   serialize() {
     return {};
@@ -19,6 +21,7 @@ class EnemyMovementComponent extends EntityComponent {
     var entity = this.getEntity();
     var body = entity.getBody();
     if (!body) { return; }
+    var world = body.GetWorld();
 
     var tracker = entity.getComponent(EntityTrackerComponent);
     var health = entity.getComponent(HealthComponent);
@@ -45,6 +48,25 @@ class EnemyMovementComponent extends EntityComponent {
 
     if (target) {
       var targetPosition = target.getBody().GetPosition();
+
+      var start = body.GetPosition();
+      var end = targetPosition.Copy();
+      end.Subtract(start);
+      end.Normalize();
+      end.Multiply(this.attackRange);
+      end.Add(start);
+      var hitFixture = world.RayCastOne(start, end)
+      var hitBody = hitFixture && hitFixture.GetBody();
+      var hitEntity = hitBody && hitBody.GetUserData();
+      if (hitEntity === target) {
+        console.log('attacking target', target.getID());
+        body.SetLinearVelocity(new b2Vec2(0, 0));
+
+        target.onShot({
+          from: this.getEntity(),
+        });
+        return;
+      }
       var direction = new b2Vec2(targetPosition.x, targetPosition.y);
       direction.Subtract(body.GetPosition());
       direction.Normalize();

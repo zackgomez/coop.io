@@ -149,9 +149,11 @@ setInterval(update, 1000 / tickrate);
 
 var GRID_DIM = 10;
 
+var last_camera_x = 0;
+var last_camera_y = 0;
 var get_camera_pos = function() {
-  var cameraX = map ? map.width / 2 : 0;
-  var cameraY = map ? map.height / 2 : 0;
+  var cameraX = last_camera_x;
+  var cameraY = last_camera_y;
   var owned_entity = _.find(entities, function(entity) {
     return entity.playerID === playerID;
   });
@@ -159,6 +161,9 @@ var get_camera_pos = function() {
     cameraX = owned_entity.x;
     cameraY = owned_entity.y;
   }
+
+  last_camera_x = cameraX;
+  last_camera_y = cameraY;
 
   return {
     x: cameraX,
