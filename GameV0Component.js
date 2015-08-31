@@ -18,9 +18,14 @@ class GameV0Component extends EntityComponent {
 
     this._playerByID = {};
     this._ownedEntityIDsByPlayerID = {};
+
+    this._timers = [];
   }
 
   think(dt) {
+    this._timers = _.filter(this._timers, (timer) => {
+      return timer(dt);
+    });
   }
 
   componentDidMount() {
@@ -45,14 +50,25 @@ class GameV0Component extends EntityComponent {
   }
 
   _spawnPlayerEntity(player) {
+    var player_id = player.id;
     var game = this.getGame();
     var components = [
       new PhysicsBodyComponent(),
       new PlayerMovementComponent({player, speed: 10}),
-      new HealthComponent({team: 1}),
+      new HealthComponent({team: 1, maxHP: 3}),
       new DestructionListenerComponent({
         callback: () => {
+          if (!this._playerByID[player_id]) { return; }
+
           console.log('player entity for player', player.id, 'destroyed');
+          var duration = 3;
+          this._timers.push((dt) => {
+            duration -= dt;
+            if (duration <= 0) {
+              this._spawnPlayerEntity(player);
+            }
+            return duration > 0;
+          });
         },
       }),
     ];
