@@ -9,6 +9,7 @@ var PhysicsBodyComponent = require('./PhysicsBodyComponent');
 var PlayerMovementComponent = require('./PlayerMovementComponent');
 var EnemyMovementComponent = require('./EnemyMovementComponent');
 var EnemySpawnerComponent = require('./EnemySpawnerComponent');
+var GameV0Component = require('./GameV0Component');
 
 var Box2D = require('box2dweb');
 var b2Vec2 = Box2D.Common.Math.b2Vec2
@@ -42,6 +43,13 @@ var Game = function() {
   this.events_ = [];
 
   this._setupPhysics();
+
+  this._gameComponent = new GameV0Component();
+  this.spawnEntity({
+    components: [
+      this._gameComponent,
+    ],
+  });
 }
 
 Game.prototype._setupPhysics = function() {
@@ -82,6 +90,10 @@ Game.prototype.spawnEntity = function(def) {
   return entity;
 };
 
+Game.prototype.destroyEntityWithID = function(entity_id) {
+  this.destroyEntity(this.entityByID[entity_id]);
+};
+
 Game.prototype.destroyEntity = function(entity) {
   if (!entity) { return; }
 
@@ -92,48 +104,12 @@ Game.prototype.addPlayer = function(player_id) {
   var player = new Player(player_id);
   this.playerByID[player_id] = player;
 
-  var components = [
-    new PhysicsBodyComponent(),
-    new PlayerMovementComponent({player, speed: 10}),
-    new HealthComponent({team: 1}),
-  ];
-  var entity = this.spawnEntity({components});
-
-  var position = new b2Vec2(
-    _.random(-this.map.width / 2, this.map.width / 2),
-    _.random(-this.map.height / 2, this.map.height / 2)
-  );
-  components = [
-    new PhysicsBodyComponent({position, radius: 2}),
-    new EnemySpawnerComponent({
-      spawnPositionFunc: (entity) => {
-        var position = entity.getBody().GetPosition();
-
-        var direction = position.GetNegative();
-        direction.Normalize();
-        direction.Multiply(2);
-
-        position.Add(direction);
-        return position;
-      },
-    }),
-    new HealthComponent({maxHP: 10, team: 2}),
-  ];
-  var position = new b2Vec2(0, 10);
-  var enemy = this.spawnEntity({components, position});
+  this._gameComponent.onPlayerAdded(player);
 };
 
 Game.prototype.removePlayer = function(player_id) {
+  this._gameComponent.onPlayerRemoved(player_id);
   delete this.playerByID[player_id];
-  _.each(this.entityByID, (entity, id) => {
-    _.find(entity.getComponents(), (component) => {
-      if (component instanceof PlayerMovementComponent) {
-        this.destroyEntity(entity);
-        return true;
-      }
-      return false;
-    });
-  }, this);
 };
 
 Game.prototype.addEvent = function(event) {

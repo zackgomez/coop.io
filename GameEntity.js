@@ -18,6 +18,10 @@ class GameEntity {
     }
   }
 
+  getID() {
+    return this.id;
+  }
+
   serialize() {
     var serialized = {};
     _.each(this.components_, (component) => {
