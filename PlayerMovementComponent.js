@@ -76,20 +76,28 @@ class PlayerMovementComponent extends EntityComponent {
       var hitEntity = null;
       var hitPoint = null;
       var hitNormal = null;
+      var lowestFraction = 1;
       var callback = (fixture, point, normal, fraction) => {
         if (fixture.IsSensor()) {
-          return -1;
+          return lowestFraction;
         }
 
-        hitPoint = point;
+        if (fraction > lowestFraction) {
+          return fraction;
+        }
+        lowestFraction = fraction;
 
         var body = fixture.GetBody();
         var entity = body.GetUserData();
+
+        hitPoint = point;
 
         if (entity) {
           hitEntity = entity;
           hitPoint = point;
           hitNormal = normal;
+        } else {
+          hitEntity = null;
         }
 
         return fraction;
