@@ -1,7 +1,9 @@
 var _ = require('lodash');
 var WebSocket = require('ws');
 var Immutable = require('immutable');
-var WS_PORT = 3555;
+var clamp = require('./clamp');
+
+const WS_PORT = 3555;
 
 var map = null;
 var playerID = -1;
@@ -9,8 +11,8 @@ var entities = [];
 var networkEvents = [];
 var effects = [];
 
-var tickrate = 64;
-var millis_per_tick = 1000/tickrate;
+const tickrate = 64;
+const millis_per_tick = 1000/tickrate;
 
 var ws = new WebSocket('ws://'+window.location.hostname+':'+WS_PORT+'/socket');
 ws.onopen = function() {
@@ -189,16 +191,34 @@ var draw = function(dt) {
   _.each(networkEvents, (event) => {
     switch(event.type) {
       case 'shot':
-        var duration = 0.125;
-        var effect = (dt) => {
-          var path = new Path2D();
-          path.moveTo(event.start.x, event.start.y);
-          path.lineTo(event.end.x, event.end.y);
-          ctx.strokeStyle = 'rgb(20, 200, 200)';
+        const trail_length = 5;
+        const speed = 200;
+        let xdir = event.end.x - event.start.x;
+        let ydir = event.end.y - event.start.y;
+        let total_length = Math.sqrt(xdir * xdir + ydir * ydir);
+        xdir /= total_length;
+        ydir /= total_length;
+
+        let t = 0;
+        let duration = (total_length - trail_length) / speed;
+
+        let effect = (dt) => {
+          let offset = speed * t;
+
+          let startx = event.start.x + xdir * offset;
+          let starty = event.start.y + ydir * offset;
+          let endx = startx + xdir * trail_length;
+          let endy = starty + ydir * trail_length;
+
+          let path = new Path2D();
+          path.moveTo(startx, starty);
+          path.lineTo(endx, endy);
+          ctx.lineWidth = 0.33;
+          ctx.strokeStyle = 'rgb(200, 200, 20)';
           ctx.stroke(path);
 
-          duration -= dt;
-          return duration > 0;
+          t += dt;
+          return t < duration;
         };
         effects.push(effect);
 
@@ -247,6 +267,7 @@ var draw = function(dt) {
       ctx.lineTo(map.width/2, gridy);
       gridy += GRID_DIM;
     }
+    ctx.lineWidth = 1;
     ctx.strokeStyle = 'rgb(100, 100, 100)';
     ctx.stroke();
 
@@ -279,7 +300,7 @@ var draw = function(dt) {
       aim_line.moveTo(0, 0);
       aim_line.lineTo(100000, 0);
       ctx.lineWidth = 0.25;
-      ctx.strokeStyle = 'rgba(255, 20, 20, 128)';
+      ctx.strokeStyle = 'rgba(255, 20, 20, 0.5)';
       ctx.stroke(aim_line);
     }
 
