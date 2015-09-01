@@ -12,20 +12,35 @@ var PhysicsBodyComponent = require('./PhysicsBodyComponent');
 var EnemySpawnerComponent = require('./EnemySpawnerComponent');
 var DestructionListenerComponent = require('./DestructionListenerComponent');
 
+var initial_queen_spawn_rate = 15; // in seconds
+
 class GameV0Component extends EntityComponent {
   constructor(props) {
     super(props);
 
     this._playerByID = {};
     this._ownedEntityIDsByPlayerID = {};
+    this._nextQueenSpawnTime = 0;
+    this._queenSpawnRate = 0;
 
     this._timers = [];
   }
 
   think(dt) {
+
+    if (_.size(this._playerByID)) {
+      this._nextQueenSpawnTime -= dt;
+      if (this._nextQueenSpawnTime <= 0) {
+        this._spawnQueen();
+        this._queenSpawnRate /= 1.05; // progressively spawn faster
+        this._nextQueenSpawnTime = this._queenSpawnRate;
+      }
+    }
+
     this._timers = _.filter(this._timers, (timer) => {
       return timer(dt);
     });
+
   }
 
   componentDidMount() {
@@ -37,6 +52,11 @@ class GameV0Component extends EntityComponent {
 
     this._spawnPlayerEntity(player);
     this._spawnQueen();
+
+    if (_.size(this._playerByID) == 1) {
+      this._queenSpawnRate = initial_queen_spawn_rate / _.size(this._playerByID);
+      this._nextQueenSpawnTime = this._queenSpawnRate;
+    }
   }
 
   onPlayerRemoved(player_id) {
@@ -47,6 +67,11 @@ class GameV0Component extends EntityComponent {
 
     delete this._playerByID[player_id];
     delete this._ownedEntityIDsByPlayerID[player_id];
+
+    if (_.size(this._playerByID) == 0) {
+      this._nextQueenSpawnTime = 0;
+    }
+
   }
 
   _spawnPlayerEntity(player) {
@@ -86,6 +111,7 @@ class GameV0Component extends EntityComponent {
       _.random(-map.width / 2, map.width / 2),
       _.random(-map.height / 2, map.height / 2)
     );
+    console.log(`Queen created at ${position.x}, ${position.y}`);
     var components = [
       new PhysicsBodyComponent({position, radius: 2}),
       new EnemySpawnerComponent({
