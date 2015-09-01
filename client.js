@@ -11,7 +11,6 @@ var effects = [];
 
 var tickrate = 64;
 var millis_per_tick = 1000/tickrate;
-setInterval(update, millis_per_tick);
 
 var ws = new WebSocket('ws://'+window.location.hostname+':'+WS_PORT+'/socket');
 ws.onopen = function() {
@@ -73,18 +72,9 @@ var keycode_to_input = {
 };
 
 var input_state = {};
-var last_input_send_timestamp = 0;
+var input_state_dirty = false;
 var on_input_change = function() {
-  var now = Date.now();
-  if (now - last_input_send_timestamp  < millis_per_tick) {
-    return;
-  }
-  last_input_send_timestamp = Date.now();
-  var msg = {
-    type: 'input',
-    payload: _.clone(input_state),
-  };
-  ws.send(JSON.stringify(msg));
+  input_state_dirty = true;
 };
 
 
@@ -154,7 +144,16 @@ var screen_to_world_pos = function(x, y) {
 };
 
 var update = function() {
+  if (input_state_dirty) {
+    var msg = {
+      type: 'input',
+      payload: _.clone(input_state),
+    };
+    ws.send(JSON.stringify(msg));
+  }
+  input_state_dirty = false;
 };
+setInterval(update, millis_per_tick);
 
 var GRID_DIM = 10;
 
