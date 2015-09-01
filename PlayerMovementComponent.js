@@ -77,7 +77,7 @@ class PlayerMovementComponent extends EntityComponent {
       console.log('shooting', position, end);
       var callback = (fixture, point, normal, fraction) => {
         if (fixture.IsSensor()) {
-          return fraction;
+          return 1;
         }
 
         hitPoint = point;
@@ -93,7 +93,7 @@ class PlayerMovementComponent extends EntityComponent {
           });
 
           if (shot_result.ignore) {
-            return fraction;
+            return 1;
           }
         }
 
