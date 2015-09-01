@@ -80,7 +80,7 @@ class GameV0Component extends EntityComponent {
     var components = [
       new PhysicsBodyComponent({radius: 1}),
       new PlayerMovementComponent({player, speed: 13, range: 100}),
-      new HealthComponent({team: 1, maxHP: 3}),
+      new HealthComponent({team: 1, maxHP: 3, invulnTime: 1}),
       new DestructionListenerComponent({
         callback: () => {
           if (!this._playerByID[player_id]) { return; }
@@ -120,7 +120,7 @@ class GameV0Component extends EntityComponent {
 
           var direction = position.GetNegative();
           direction.Normalize();
-          direction.Multiply(2);
+          direction.Multiply(5);
 
           position.Add(direction);
           return position;

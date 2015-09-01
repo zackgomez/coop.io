@@ -11,7 +11,7 @@ class EnemySpawnerComponent extends EntityComponent {
   constructor(props) {
     super(props);
 
-    this.respawnInterval = this.props.respawnInterval || 5;
+    this.respawnInterval = this.props.respawnInterval || 4;
     this.respawnCooldown = this.props.respawnCooldown || 0;
 
     this.spawnPositionFunc = this.props.spawnPositionFunc || ((entity) => new b2Vec2(0, 0));
