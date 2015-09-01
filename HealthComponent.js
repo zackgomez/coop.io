@@ -11,6 +11,8 @@ class HealthComponent extends EntityComponent {
   serialize() {
     return {
       team: this.team,
+      hp: this.hp,
+      maxHP: this.maxHP,
     };
   }
 

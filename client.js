@@ -28,6 +28,8 @@ ws.onmessage = function(event) {
         angle: entity.angle,
         playerID: entity.playerID,
         team: entity.team,
+        hp: entity.hp,
+        maxHP: entity.maxHP,
       };
     });
     networkEvents = networkEvents.concat(message.payload.events);
@@ -258,6 +260,15 @@ var draw = function(dt) {
     ctx.save();
 
     ctx.translate(x, y);
+
+    if (entity.hp) {
+      ctx.save();
+      ctx.translate(- 2*entity.r, 2 * entity.r);
+      ctx.font = '2px sans-serif';
+      ctx.fillStyle = 'white';
+      ctx.fillText(entity.hp + '/' + entity.maxHP, 1, 1);
+      ctx.restore();
+    }
 
     if (entity.playerID && entity.angle) {
       ctx.rotate(-entity.angle || 0);
