@@ -180,8 +180,12 @@ var get_camera_pos = function() {
   };
 };
 
+var last_draw_call_time = Date.now();
+var average_draw_interval = 0;
 var draw = function(dt) {
   var start = Date.now();
+  average_draw_interval = 0.9 * average_draw_interval + 0.1 * (start - last_draw_call_time);
+  last_draw_call_time = start;
 
   _.each(networkEvents, (event) => {
     switch(event.type) {
@@ -304,13 +308,11 @@ var draw = function(dt) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 
   ctx.font = '20px sans-serif';
+  ctx.fillStyle = 'white';
   if (owned_entity) {
-    ctx.fillStyle = 'white';
     ctx.fillText('position: ' + owned_entity.x + ' , ' + owned_entity.y, 10, 20);
   }
-  var display_angle = DEBUG_MOUSE_ANGLE > 0 ? DEBUG_MOUSE_ANGLE : DEBUG_MOUSE_ANGLE + 2 * Math.PI;
-  display_angle = display_angle * 180 / Math.PI;
-  ctx.fillText('mouse: ' + DEBUG_MOUSE_WORLD_POSITION.x + ', ' + DEBUG_MOUSE_WORLD_POSITION.y + ' | angle: ' + display_angle, 10, 35);
+  ctx.fillText('fps: ' + 1000 / average_draw_interval, 10, 35);
 
   requestAnimationFrame(() => {
     var end = Date.now();
