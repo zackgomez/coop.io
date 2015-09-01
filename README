@@ -1,0 +1,5 @@
+# ./README
+npm install
+npm install -g babel
+sleep 2 && open http://localhost:3500 &
+npm run start

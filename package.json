@@ -29,7 +29,7 @@
     "uglify-js": "~2.4.13"
   },
   "scripts": {
-    "run": "babel-node server.js",
+    "start": "babel-node server.js",
     "build": "NODE_ENV=production browserify ./ | uglifyjs -cm 2>/dev/null > ./assets/bundle.js",
     "start-prod": "NODE_ENV=production babel-node server.js",
     "clean": "rm -f ./assets/bundle.js"
