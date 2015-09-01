@@ -53,7 +53,7 @@ class GameV0Component extends EntityComponent {
     var player_id = player.id;
     var game = this.getGame();
     var components = [
-      new PhysicsBodyComponent(),
+      new PhysicsBodyComponent({radius: 1}),
       new PlayerMovementComponent({player, speed: 13, range: 100}),
       new HealthComponent({team: 1, maxHP: 3}),
       new DestructionListenerComponent({

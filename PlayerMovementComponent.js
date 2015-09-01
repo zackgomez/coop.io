@@ -72,12 +72,13 @@ class PlayerMovementComponent extends EntityComponent {
       var angle = body.GetAngle();
       var length = this.range;
       var end = new b2Vec2(position.x + length * Math.cos(angle), position.y + length * -Math.sin(angle));
-      var hitPoint = end;
 
-      console.log('shooting', position, end);
+      var hitEntity = null;
+      var hitPoint = null;
+      var hitNormal = null;
       var callback = (fixture, point, normal, fraction) => {
         if (fixture.IsSensor()) {
-          return 1;
+          return -1;
         }
 
         hitPoint = point;
@@ -86,25 +87,27 @@ class PlayerMovementComponent extends EntityComponent {
         var entity = body.GetUserData();
 
         if (entity) {
-          var shot_result = entity.onShot({
-            from: this.getEntity(),
-            point: point,
-            normal: normal,
-          });
-
-          if (shot_result.ignore) {
-            return 1;
-          }
+          hitEntity = entity;
+          hitPoint = point;
+          hitNormal = normal;
         }
 
-        return 0;
+        return fraction;
       };
       world.RayCast(callback, position, end);
+
+      if (hitEntity) {
+        var shot_result = hitEntity.onShot({
+          from: this.getEntity(),
+          point: hitPoint,
+          normal: hitNormal,
+        });
+      }
 
       this.getGame().addEvent({
         type: 'shot',
         start: position,
-        end: hitPoint,
+        end: hitPoint || end,
       });
     }
   }

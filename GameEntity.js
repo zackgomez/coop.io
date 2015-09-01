@@ -46,9 +46,6 @@ class GameEntity {
     _.each(this.components_, (component) => {
       component.onShot(shot_definition);
     });
-    return {
-      ignore: false,
-    };
   }
 
   onDestroy() {
