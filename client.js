@@ -181,6 +181,10 @@ var get_camera_pos = function() {
   };
 };
 
+var printable_float = function(f) {
+  return parseFloat(f).toFixed(1);
+}
+
 var last_draw_call_time = Date.now();
 var average_draw_interval = 0;
 var draw = function(dt) {
@@ -330,9 +334,9 @@ var draw = function(dt) {
   ctx.font = '20px sans-serif';
   ctx.fillStyle = 'white';
   if (owned_entity) {
-    ctx.fillText('position: ' + owned_entity.x + ' , ' + owned_entity.y, 10, 20);
+    ctx.fillText(`position: ${printable_float(owned_entity.x)}, ${printable_float(owned_entity.y)}`, 10, 20);
   }
-  ctx.fillText('fps: ' + 1000 / average_draw_interval, 10, 35);
+  ctx.fillText(`fps: ${printable_float(1000 / average_draw_interval)}`, 10, 35);
 
   requestAnimationFrame(() => {
     var end = Date.now();
