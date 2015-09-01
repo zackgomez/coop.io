@@ -9,6 +9,7 @@ class PlayerMovementComponent extends EntityComponent {
     this.player = this.props.player || null;
 
     this.speed = this.props.speed || 1;
+    this.range = this.props.range || 50;
     this.fireInterval = this.props.fireInterval || 0.25;
     this.nextFireTime = 0;
   }
@@ -69,7 +70,7 @@ class PlayerMovementComponent extends EntityComponent {
 
       var position = body.GetPosition();
       var angle = body.GetAngle();
-      var length = 50;
+      var length = this.range;
       var end = new b2Vec2(position.x + length * Math.cos(angle), position.y + length * -Math.sin(angle));
       var hitPoint = end;
 
