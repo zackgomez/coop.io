@@ -14,6 +14,8 @@ var effects = [];
 const tickrate = 64;
 const millis_per_tick = 1000/tickrate;
 
+var game_start_time = 0;
+
 var ws = new WebSocket('ws://'+window.location.hostname+':'+WS_PORT+'/socket');
 ws.onopen = function() {
   console.log('connected');
@@ -37,6 +39,9 @@ ws.onmessage = function(event) {
   } else if (message.type === 'player_info') {
     playerID = message.payload.playerID;
     console.log('server assigned playerID', playerID);
+  } else if (message.type === 'start_time') {
+    game_start_time = message.payload;
+    console.log(`Received game start timestamp ${game_start_time}`);
   } else if (message.type === 'map_info') {
     map = message.payload;
     console.log('server sent map info', map);
@@ -337,6 +342,8 @@ var draw = function(dt) {
     ctx.fillText(`position: ${printable_float(owned_entity.x)}, ${printable_float(owned_entity.y)}`, 10, 20);
   }
   ctx.fillText(`fps: ${printable_float(1000 / average_draw_interval)}`, 10, 35);
+  ctx.font = '48px sans-serif';
+  ctx.fillText(`${parseFloat((Date.now() - game_start_time) / 1000).toFixed(0)}`, 220, 40);
 
   requestAnimationFrame(() => {
     var end = Date.now();
