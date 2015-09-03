@@ -40,7 +40,7 @@ var Game = function() {
 
   this.lastEntityID_ = 100;
   this.entityRemovalSet_ = {};
-  this.events_ = [];
+  this._events = [];
 
   this._setupPhysics();
 
@@ -113,7 +113,7 @@ Game.prototype.removePlayer = function(player_id) {
 };
 
 Game.prototype.addEvent = function(event) {
-  this.events_.push(event);
+  this._events.push(event);
 };
 
 Game.prototype.handleInputState = function(player_id, input_state) {
@@ -188,8 +188,8 @@ Game.prototype.getNetworkData = function() {
   _.each(this.entityByID, function(entity, id) {
     state.entityByID[id] = entity.serialize();
   });
-  state.events = _.clone(this.events_);
-  this.events_ = [];
+  state.events = _.clone(this._events);
+  this._events = [];
 
   return state;
 };

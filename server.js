@@ -12,11 +12,12 @@ var app = express();
 var HTTP_PORT = 3500;
 var WS_PORT = 3555;
 
-var game = new Game();
+var game = null;
+var game_loop_interval = null;
 
 app.get('/assets/bundle.js', browserify('./client', {
   debug: true,
-  watch: true
+  watch: true,
 }));
 app
   .use('/assets', express.static(path.join(__dirname, 'assets')))
@@ -36,6 +37,9 @@ wss.on('connection', function(ws) {
       playerID: connection_id,
     },
   }));
+
+  start_game_if_necessary();
+
   ws.send(JSON.stringify({
     type: 'map_info',
     payload: game.getMapInfo(),
@@ -46,6 +50,10 @@ wss.on('connection', function(ws) {
   ws.on('close', function() {
     console.log('closed connection', connection_id);
     game.removePlayer(connection_id);
+
+    if (_.size(game.playerByID) === 0) {
+      destroy_game();
+    }
   });
 
   ws.on('message', function(data, flags) {
@@ -57,27 +65,45 @@ wss.on('connection', function(ws) {
   });
 });
 
-var TICK_RATE = 64;
+function start_game_if_necessary() {
+  if (game) { return; }
 
-var lastUpdateTime = Date.now();
-setInterval(function () {
-  var now = Date.now();
-  var dt = (now - lastUpdateTime) / 1000;
-  lastUpdateTime = now;
-  game.update(dt);
+  console.log('starting new game');
 
-  var state = game.getNetworkData();
-  var message = {
-    type: 'state',
-    payload: state,
-  };
-  var encoded_message = JSON.stringify(message);
+  game = new Game();
 
-  _.each(wss.clients, function(ws) {
-    ws.send(encoded_message, function(err) {
-      if (err) {
-        console.log('error sending message', err);
-      }
+  var TICK_RATE = 64;
+
+  var lastUpdateTime = Date.now();
+  game_loop_interval = setInterval(function () {
+    var now = Date.now();
+    var dt = (now - lastUpdateTime) / 1000;
+    lastUpdateTime = now;
+    game.update(dt);
+
+    var state = game.getNetworkData();
+    var message = {
+      type: 'state',
+      payload: state,
+    };
+    var encoded_message = JSON.stringify(message);
+
+    _.each(wss.clients, function(ws) {
+      ws.send(encoded_message, function(err) {
+        if (err) {
+          console.log('error sending message', err);
+        }
+      });
     });
-  });
-}, 1000 / TICK_RATE);
+  }, 1000 / TICK_RATE);
+}
+
+function destroy_game() {
+  if (!game) { return; }
+
+  console.log('destroying game');
+
+  clearInterval(game_loop_interval);
+  game = null;
+  game_loop_interval = null;
+}
