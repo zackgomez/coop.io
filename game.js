@@ -35,6 +35,8 @@ var Game = function() {
     height: 100,
   };
 
+  this.startTime = Date.now();
+
   this.playerByID = {};
   this.entityByID = {};
 
@@ -175,6 +177,10 @@ Game.prototype.commitEntityRemoval_ = function() {
 
 Game.prototype.getMapInfo = function() {
   return this.map;
+};
+
+Game.prototype.getStartTime = function() {
+  return this.startTime;
 };
 
 Game.prototype.getWorld = function() {

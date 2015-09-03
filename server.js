@@ -44,6 +44,10 @@ wss.on('connection', function(ws) {
     type: 'map_info',
     payload: game.getMapInfo(),
   }));
+  ws.send(JSON.stringify({
+    type: 'start_time',
+    payload: game.startTime,
+  }));
 
   game.addPlayer(connection_id);
 
