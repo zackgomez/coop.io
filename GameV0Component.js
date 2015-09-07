@@ -23,19 +23,45 @@ class GameV0Component extends EntityComponent {
     this._nextQueenSpawnTime = 0;
     this._queenSpawnRate = 0;
 
+    this._playerIDToRespawnTime = {};
+
     this._timers = [];
   }
 
-  think(dt) {
-
-    if (_.size(this._playerByID)) {
-      this._nextQueenSpawnTime -= dt;
-      if (this._nextQueenSpawnTime <= 0) {
-        this._spawnQueen();
-        this._queenSpawnRate /= 1.05; // progressively spawn faster
-        this._nextQueenSpawnTime = this._queenSpawnRate;
+  serialize() {
+    var respawnTimeByPlayerID = {};
+    _.each(this._playerByID, (player, id) => {
+      let time = this._playerIDToRespawnTime[id];
+      if (time > 0) {
+        respawnTimeByPlayerID[time];
       }
+    });
+    if (_.size(respawnTimeByPlayerID) > 0) {
+      return {respawnTimeByPlayerID};
     }
+    return {};
+  }
+
+  think(dt) {
+    this._nextQueenSpawnTime -= dt;
+    if (this._nextQueenSpawnTime <= 0) {
+      this._spawnQueen();
+      this._queenSpawnRate /= 1.05; // progressively spawn faster
+      this._nextQueenSpawnTime = this._queenSpawnRate;
+    }
+
+    _.each(this._playerIDToRespawnTime, (time, playerID) => {
+      if (!time) { return; }
+      var player = this._playerByID[playerID];
+      if (!player) { return; }
+
+      let new_time = time - dt;
+      if (new_time <= 0) {
+        this._spawnPlayerEntity(player);
+        new_time = null;
+      }
+      this._playerIDToRespawnTime[playerID] = new_time;
+    });
 
     this._timers = _.filter(this._timers, (timer) => {
       return timer(dt);
@@ -67,11 +93,7 @@ class GameV0Component extends EntityComponent {
 
     delete this._playerByID[player_id];
     delete this._ownedEntityIDsByPlayerID[player_id];
-
-    if (_.size(this._playerByID) == 0) {
-      this._nextQueenSpawnTime = 0;
-    }
-
+    delete this._playerIDToRespawnTime[player_id];
   }
 
   _spawnPlayerEntity(player) {
@@ -86,14 +108,9 @@ class GameV0Component extends EntityComponent {
           if (!this._playerByID[player_id]) { return; }
 
           console.log('player entity for player', player.id, 'destroyed');
+
           var duration = 3;
-          this._timers.push((dt) => {
-            duration -= dt;
-            if (duration <= 0) {
-              this._spawnPlayerEntity(player);
-            }
-            return duration > 0;
-          });
+          this._playerIDToRespawnTime[player_id] = duration;
         },
       }),
     ];
