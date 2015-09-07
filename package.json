@@ -18,6 +18,7 @@
     "invariant": "^2.1.0",
     "lodash": "^3.10.1",
     "matterjs": "0.0.3",
+    "simple-statistics": "^1.0.0",
     "underscore": "*",
     "ws": "0.4.31"
   },

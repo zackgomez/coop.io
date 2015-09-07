@@ -2,6 +2,7 @@ var _ = require('lodash');
 var WebSocket = require('ws');
 var Immutable = require('immutable');
 var clamp = require('./clamp');
+var StatsTracker = require('./StatsTracker');
 
 const WS_PORT = 3555;
 
@@ -16,11 +17,14 @@ const millis_per_tick = 1000/tickrate;
 
 var game_start_time = 0;
 
+var packet_stats = new StatsTracker(100);
+
 var ws = new WebSocket('ws://'+window.location.hostname+':'+WS_PORT+'/socket');
 ws.onopen = function() {
   console.log('connected');
 };
 ws.onmessage = function(event) {
+  packet_stats.recordSample({bytes: event.data.length});
   var message = JSON.parse(event.data);
   if (message.type === 'state') {
     entities = _.map(message.payload.entityByID, function(entity, id) {
@@ -186,8 +190,8 @@ var get_camera_pos = function() {
   };
 };
 
-var printable_float = function(f) {
-  return parseFloat(f).toFixed(1);
+var printable_float = function(f, decimals = 1) {
+  return parseFloat(f).toFixed(decimals);
 }
 
 var last_draw_call_time = Date.now();
@@ -336,14 +340,18 @@ var draw = function(dt) {
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 
+  var cmd_rate_avg = packet_stats.getSamplesPerSecond();
+  var cmd_rate_var = packet_stats.getSampleStdDevMillis();
+  var cmd_size_avg = packet_stats.getFieldPerSecond('bytes') / 1024;
+
   ctx.font = '20px sans-serif';
   ctx.fillStyle = 'white';
-  if (owned_entity) {
-    ctx.fillText(`position: ${printable_float(owned_entity.x)}, ${printable_float(owned_entity.y)}`, 10, 20);
-  }
+  ctx.fillText(`cmdrate: ${printable_float(cmd_rate_avg)} var (ms): ${printable_float(cmd_rate_var)} size (KB/s): ${printable_float(cmd_size_avg)}`, 10, 20);
   ctx.fillText(`fps: ${printable_float(1000 / average_draw_interval)}`, 10, 35);
+  ctx.fillText(`Entities: ${entities.length}`, 10, 50);
   ctx.font = '48px sans-serif';
-  ctx.fillText(`${parseFloat((Date.now() - game_start_time) / 1000).toFixed(0)}`, 220, 40);
+  ctx.fillText(`Time: ${parseFloat((Date.now() - game_start_time) / 1000).toFixed(0)}`, screen_width / 2, 40);
+
 
   requestAnimationFrame(() => {
     var end = Date.now();
