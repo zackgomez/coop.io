@@ -1,7 +1,13 @@
 var Box2D = require('box2dweb');
+var clamp = require('./clamp');
 var b2Vec2 = Box2D.Common.Math.b2Vec2;
 
 var EntityComponent = require('./EntityComponent');
+
+// Proportional to surface drag
+const DRAG_CONSTANT = 0.05;
+// Proportional to force applied while using WASD
+const MOVEMENT_IMPULSE_CONSTANT  = 1;
 
 class PlayerMovementComponent extends EntityComponent {
   constructor(props) {
@@ -24,6 +30,42 @@ class PlayerMovementComponent extends EntityComponent {
     };
   }
 
+  // Apply a drag force proportional to drag_constant
+  _applyDrag(body, drag_constant) {
+    var v = body.GetLinearVelocity().Copy();
+    v.Multiply(-1 * drag_constant);
+    if (v.Length()) {
+      body.ApplyImpulse(v, body.GetWorldCenter());
+    }
+  }
+
+
+  // Apply physics params to @param body for this frame given @param input_state
+  // If velocity is below a threshold apply an impulse 
+  _setPlayerDesiredVelocity(body, input_state) {
+    var xvel_target = 0;
+    var yvel_target = 0;
+    if (input_state.left) {
+      xvel_target += -1;
+    }
+    if (input_state.right) {
+      xvel_target += 1;
+    }
+    if (input_state.forward) {
+      yvel_target += -1;
+    }
+    if (input_state.backward) {
+      yvel_target += 1;
+    }
+    var impulse = b2Vec2.Make(xvel_target * MOVEMENT_IMPULSE_CONSTANT,
+          yvel_target * MOVEMENT_IMPULSE_CONSTANT);
+    if (impulse.Length()) {
+      body.ApplyImpulse(impulse, body.GetWorldCenter());
+    } else {
+      this._applyDrag(body, DRAG_CONSTANT);
+    }
+  }
+
   think(dt) {
     this.nextFireTime -= dt;
 
@@ -43,26 +85,13 @@ class PlayerMovementComponent extends EntityComponent {
       body.SetAngle(new_angle);
     }
 
-    var xvel = 0;
-    var yvel = 0;
-    if (input_state.left) {
-      xvel += -1;
-    }
-    if (input_state.right) {
-      xvel += 1;
-    }
-    if (input_state.forward) {
-      yvel += -1;
-    }
-    if (input_state.backward) {
-      yvel += 1;
-    }
+    this._setPlayerDesiredVelocity(body, input_state);
 
-    var vel = new b2Vec2(xvel, yvel);
-    vel.Normalize();
-    vel.Multiply(this.speed);
-
-    body.SetLinearVelocity(vel);
+    var player_vel = body.GetLinearVelocity();
+    if (player_vel.Length() > this.speed) {
+      player_vel.Multiply(this.speed / player_vel.Length());
+      body.SetLinearVelocity(player_vel);
+    }
 
     if (input_state.fire && this.nextFireTime <= 0) {
       this.nextFireTime = this.fireInterval;
