@@ -1,0 +1,8 @@
+{
+    "DRAG_CONSTANT": {
+        "default_value": 0.05
+    },
+    "MOVEMENT_IMPULSE_CONSTANT": {
+        "default_value": 1
+    }
+}
