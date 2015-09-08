@@ -4,10 +4,10 @@ var b2Vec2 = Box2D.Common.Math.b2Vec2;
 
 var EntityComponent = require('./EntityComponent');
 
-// Proportional to surface drag
-const DRAG_CONSTANT = 0.05;
-// Proportional to force applied while using WASD
-const MOVEMENT_IMPULSE_CONSTANT  = 1;
+var CvarStore = require('./CvarStore');
+
+CvarStore.register('sv_player_impulse', {default_value: 1});
+CvarStore.register('sv_player_friction', {default_value: 0.05});
 
 class PlayerMovementComponent extends EntityComponent {
   constructor(props) {
@@ -57,12 +57,13 @@ class PlayerMovementComponent extends EntityComponent {
     if (input_state.backward) {
       yvel_target += 1;
     }
-    var impulse = b2Vec2.Make(xvel_target * MOVEMENT_IMPULSE_CONSTANT,
-          yvel_target * MOVEMENT_IMPULSE_CONSTANT);
+    var impulseConstant = CvarStore.lookup('sv_player_impulse');
+    var impulse = b2Vec2.Make(xvel_target * impulseConstant,
+          yvel_target * impulseConstant);
     if (impulse.Length()) {
       body.ApplyImpulse(impulse, body.GetWorldCenter());
     } else {
-      this._applyDrag(body, DRAG_CONSTANT);
+      this._applyDrag(body, CvarStore.lookup('sv_player_friction'));
     }
   }
 
