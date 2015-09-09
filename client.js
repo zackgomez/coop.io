@@ -3,6 +3,8 @@ var WebSocket = require('ws');
 var Immutable = require('immutable');
 var clamp = require('./clamp');
 var StatsTracker = require('./StatsTracker');
+var ConvarController = require('./ConvarController');
+var InputHandler = require('./InputHandler');
 
 const WS_PORT = 3555;
 
@@ -12,12 +14,16 @@ var entities = [];
 var networkEvents = [];
 var effects = [];
 
+var convar_console_active = false;
+
 const tickrate = 64;
 const millis_per_tick = 1000/tickrate;
 
 var game_start_time = 0;
 
 var packet_stats = new StatsTracker(100);
+var convar = new ConvarController();
+var key_handler = new InputHandler();
 
 var ws = new WebSocket('ws://'+window.location.hostname+':'+WS_PORT+'/socket');
 ws.onopen = function() {
@@ -88,61 +94,101 @@ var on_input_change = function() {
   input_state_dirty = true;
 };
 
+/** Input Handling  */
+(function () {
 
-$(window).keydown(function(event) {
-  var input = keycode_to_input[event.keyCode];
-  var target = true;
-  if (input && input_state[input] != target) {
-    input_state[input] = target;
-    on_input_change();
-  }
-});
-$(window).keyup(function(event) {
-  var input = keycode_to_input[event.keyCode];
-  var target = false;
-  if (input && input_state[input] != target) {
-    input_state[input] = target;
-    on_input_change();
-  }
-});
+  var convar_keycode = 27;
 
-var DEBUG_MOUSE_POSITION = {x: 0, y: 0};
-var DEBUG_MOUSE_WORLD_POSITION = {x: 0, y: 0};
-var DEBUG_MOUSE_ANGLE = 0;
-var onMouseMove = function(event) {
-  var rect = canvas.getBoundingClientRect();
-  var pos = {
-    x: event.clientX - rect.left,
-    y: event.clientY - rect.top
+  var console_key_handler = new InputHandler({keyUp: function(event) {
+    if (event.keyCode == convar_keycode) {
+      set_input_handler(ingame_key_handler);
+      convar_console_active = false;
+    }
+  }, keyDown: function(event) {
+    convar.handleKey(event);
+  }});
+
+  var in_game_keydown_handler = function(event) {
+    var input = keycode_to_input[event.keyCode];
+    var target = true;
+    if (input && input_state[input] != target) {
+      input_state[input] = target;
+      on_input_change();
+    }
   };
-  DEBUG_MOUSE_POSITION = pos;
 
-  var center_offset = {
-    x: pos.x - screen_width / 2,
-    y: screen_height / 2 - pos.y,
+  var in_game_keyup_handler = function(event) {
+    var input = keycode_to_input[event.keyCode];
+    var target = false;
+    if (event.keyCode == convar_keycode) {
+      convar_console_active = true;
+      set_input_handler(console_key_handler);
+    }
+    if (input && input_state[input] != target) {
+      input_state[input] = target;
+      on_input_change();
+    }
   };
-  var current_angle = Math.atan2(center_offset.y, center_offset.x);
-  DEBUG_MOUSE_ANGLE = current_angle;
 
-  var worldPos = screen_to_world_pos(pos.x, pos.y);
-  DEBUG_MOUSE_WORLD_POSITION = worldPos;
 
-  if (input_state.mouse_angle != current_angle) {
-    input_state.mouse_angle = current_angle;
-    on_input_change();
+  var get_input_handler = function() {
+    return _input_handler;
   }
-};
-var onMouseDown = function(event) {
-  input_state.fire = 1;
-  on_input_change();
-};
-var onMouseUp = function(event) {
-  input_state.fire = 0;
-  on_input_change();
-};
-$(canvas).mousemove(onMouseMove);
-$(canvas).mousedown(onMouseDown);
-$(canvas).mouseup(onMouseUp);
+
+  var set_input_handler = function(keyhandler) {
+    _input_handler = keyhandler;
+  }
+
+  var DEBUG_MOUSE_POSITION = {x: 0, y: 0};
+  var DEBUG_MOUSE_WORLD_POSITION = {x: 0, y: 0};
+  var DEBUG_MOUSE_ANGLE = 0;
+  var onMouseMove = function(event) {
+    var rect = canvas.getBoundingClientRect();
+    var pos = {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top
+    };
+    DEBUG_MOUSE_POSITION = pos;
+
+    var center_offset = {
+      x: pos.x - screen_width / 2,
+      y: screen_height / 2 - pos.y,
+    };
+    var current_angle = Math.atan2(center_offset.y, center_offset.x);
+    DEBUG_MOUSE_ANGLE = current_angle;
+
+    var worldPos = screen_to_world_pos(pos.x, pos.y);
+    DEBUG_MOUSE_WORLD_POSITION = worldPos;
+
+    if (input_state.mouse_angle != current_angle) {
+      input_state.mouse_angle = current_angle;
+      on_input_change();
+    }
+  };
+  var onMouseDown = function(event) {
+    input_state.fire = 1;
+    on_input_change();
+  };
+  var onMouseUp = function(event) {
+    input_state.fire = 0;
+    on_input_change();
+  };
+
+  var ingame_key_handler = new InputHandler({
+    keyUp: in_game_keyup_handler, 
+    keyDown:in_game_keydown_handler,
+    mouseUp: onMouseUp,
+    mouseDown:onMouseDown,
+    mouseMove:onMouseMove
+  });
+  var _input_handler = ingame_key_handler;
+
+  $(canvas).mousemove((e) => get_input_handler().handleMouseMove(e));
+  $(canvas).mousedown((e) => get_input_handler().handleMouseDown(e));
+  $(canvas).mouseup((e) => get_input_handler().handleMouseUp(e));
+  $(window).keydown((e) => {get_input_handler().handleKeyDown(e)});
+  $(window).keyup((e) => {get_input_handler().handleKeyUp(e);});
+})();
 
 var screen_to_world_pos = function(x, y) {
   var cameraPosition = get_camera_pos();
@@ -351,6 +397,9 @@ var draw = function(dt) {
   ctx.fillText(`Entities: ${entities.length}`, 10, 50);
   ctx.font = '48px sans-serif';
   ctx.fillText(`Time: ${parseFloat((Date.now() - game_start_time) / 1000).toFixed(0)}`, screen_width / 2, 40);
+  if (convar_console_active) {
+    ctx.fillText('convar active (press ESC)', screen_width / 2, 100);
+  }
 
 
   requestAnimationFrame(() => {
