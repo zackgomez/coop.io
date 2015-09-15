@@ -25,6 +25,8 @@ class GameV0Component extends EntityComponent {
 
     this._playerIDToRespawnTime = {};
 
+    this._endTime = null;
+
     this._timers = [];
   }
 
@@ -36,10 +38,15 @@ class GameV0Component extends EntityComponent {
         respawnTimeByPlayerID[time];
       }
     });
+
+    var ret = {};
     if (_.size(respawnTimeByPlayerID) > 0) {
-      return {respawnTimeByPlayerID};
+      Object.assign(ret, {respawnTimeByPlayerID});
     }
-    return {};
+    if (this._endTime) {
+      Object.assign(ret, {endTime: this._endTime});
+    }
+    return ret;
   }
 
   think(dt) {
@@ -66,7 +73,12 @@ class GameV0Component extends EntityComponent {
     this._timers = _.filter(this._timers, (timer) => {
       return timer(dt);
     });
+  }
 
+  didStepPhysics() {
+    if (this.isGameOver()) {
+      this._endTime = Date.now();
+    }
   }
 
   componentDidMount() {
@@ -94,6 +106,12 @@ class GameV0Component extends EntityComponent {
     delete this._playerByID[player_id];
     delete this._ownedEntityIDsByPlayerID[player_id];
     delete this._playerIDToRespawnTime[player_id];
+  }
+
+  isGameOver() {
+    return _.all(this._playerByID, (player, player_id) => {
+      return this._playerIDToRespawnTime[player_id] > 0;
+    });
   }
 
   _spawnPlayerEntity(player) {

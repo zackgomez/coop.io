@@ -6,6 +6,7 @@ var WebSocketServer = require('ws').Server;
 var Immutable = require('immutable');
 
 var Game = require('./Game');
+var StatsTracker = require('./StatsTracker');
 
 var app = express();
 
@@ -61,10 +62,9 @@ wss.on('connection', function(ws) {
   });
 
   ws.on('message', function(data, flags) {
-    //console.log('got data from socket:', data);
     var parsed_data = JSON.parse(data);
     if (parsed_data.type === 'input') {
-      game.handleInputState(connection_id, parsed_data.payload);
+      game && game.handleInputState(connection_id, parsed_data.payload);
     };
   });
 });
@@ -76,14 +76,16 @@ function start_game_if_necessary() {
 
   game = new Game();
 
-  var TICK_RATE = 64;
+  var TICK_RATE = 100;
+
+  var stats_tracker = new StatsTracker(100);
 
   var lastUpdateTime = Date.now();
+  var lastStatsPrintTime = 0;
   game_loop_interval = setInterval(function () {
-    var now = Date.now();
-    var dt = (now - lastUpdateTime) / 1000;
+    let now = Date.now();
     lastUpdateTime = now;
-    game.update(dt);
+    game.update(1 / TICK_RATE);
 
     var state = game.getNetworkData();
     var message = {
@@ -99,6 +101,16 @@ function start_game_if_necessary() {
         }
       });
     });
+    stats_tracker.recordSample({bytes: encoded_message.length / 1024});
+    if (now - lastStatsPrintTime > 1000) {
+      console.log(`rate: ${stats_tracker.getSamplesPerSecond()} KB/s: ${stats_tracker.getFieldPerSecond('bytes')}`);
+      lastStatsPrintTime = now;
+    }
+
+    if (!game.isRunning()) {
+      console.log('Game over');
+      destroy_game();
+    }
   }, 1000 / TICK_RATE);
 }
 
