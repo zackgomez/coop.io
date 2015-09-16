@@ -20,6 +20,7 @@ const tickrate = 64;
 const millis_per_tick = 1000/tickrate;
 
 var game_start_time = 0;
+var game_data = null;
 
 var packet_stats = new StatsTracker(100);
 var convar = new ConvarController();
@@ -33,7 +34,11 @@ ws.onmessage = function(event) {
   packet_stats.recordSample({bytes: event.data.length});
   var message = JSON.parse(event.data);
   if (message.type === 'state') {
-    entities = _.map(message.payload.entityByID, function(entity, id) {
+    entities = _.filter(_.map(message.payload.entityByID, function(entity, id) {
+      if (id === '100') {
+        game_data = entity;
+        return null;
+      }
       return {
         x: entity.x,
         y: entity.y,
@@ -44,7 +49,7 @@ ws.onmessage = function(event) {
         hp: entity.hp,
         maxHP: entity.maxHP,
       };
-    });
+    }));
     networkEvents = networkEvents.concat(message.payload.events);
   } else if (message.type === 'player_info') {
     playerID = message.payload.playerID;
@@ -175,7 +180,7 @@ var on_input_change = function() {
   };
 
   var ingame_key_handler = new InputHandler({
-    keyUp: in_game_keyup_handler, 
+    keyUp: in_game_keyup_handler,
     keyDown:in_game_keydown_handler,
     mouseUp: onMouseUp,
     mouseDown:onMouseDown,
@@ -400,7 +405,17 @@ var draw = function(dt) {
   if (convar_console_active) {
     ctx.fillText('convar active (press ESC)', screen_width / 2, 100);
   }
-
+  if (game_data) {
+    var {endTime, respawnTimeByPlayerID} = game_data;
+    if (endTime) {
+      ctx.fillText(`Game Over`, screen_width / 2, screen_height / 2);
+    } else if (respawnTimeByPlayerID && respawnTimeByPlayerID[playerID]) {
+      ctx.fillText(
+        `Respawn in ${printable_float(respawnTimeByPlayerID[playerID])}`,
+        screen_width / 2,
+        screen_height / 2);
+    }
+  }
 
   requestAnimationFrame(() => {
     var end = Date.now();

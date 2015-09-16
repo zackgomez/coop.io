@@ -35,7 +35,7 @@ class GameV0Component extends EntityComponent {
     _.each(this._playerByID, (player, id) => {
       let time = this._playerIDToRespawnTime[id];
       if (time > 0) {
-        respawnTimeByPlayerID[time];
+        respawnTimeByPlayerID[id] = time;
       }
     });
 
@@ -73,12 +73,6 @@ class GameV0Component extends EntityComponent {
     this._timers = _.filter(this._timers, (timer) => {
       return timer(dt);
     });
-  }
-
-  didStepPhysics() {
-    if (this.isGameOver()) {
-      this._endTime = Date.now();
-    }
   }
 
   componentDidMount() {
@@ -129,6 +123,10 @@ class GameV0Component extends EntityComponent {
 
           var duration = 3;
           this._playerIDToRespawnTime[player_id] = duration;
+
+          if (this.isGameOver()) {
+            this._endTime = Date.now();
+          }
         },
       }),
     ];

@@ -76,7 +76,7 @@ function start_game_if_necessary() {
 
   game = new Game();
 
-  var TICK_RATE = 100;
+  var TICK_RATE = 50;
 
   var stats_tracker = new StatsTracker(100);
 
